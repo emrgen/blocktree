@@ -15,7 +15,7 @@ type FracIndex struct {
 
 // DefaultFracIndex creates a new fractional index.
 func DefaultFracIndex() *FracIndex {
-	return &FracIndex{bytes: []uint8{terminator}}
+	return &FracIndex{bytes: []byte{terminator}}
 }
 
 func fromBytes(bytes []byte) *FracIndex {

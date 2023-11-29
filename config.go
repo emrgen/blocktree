@@ -1,8 +1,16 @@
 package blocktree
 
+type DbConfig struct {
+	Host     string
+	Port     int
+	User     string
+	Password string
+	Database string
+}
+
 type Config struct {
-	grpcPort int
-	httpPort int
+	GrpcPort int
+	HttpPort int
 }
 
 func NewConfig() *Config {

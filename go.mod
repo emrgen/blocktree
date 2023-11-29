@@ -3,6 +3,8 @@ module github.com/emrgen/blocktree
 go 1.21.1
 
 require (
+	github.com/deckarep/golang-set/v2 v2.4.0
+	github.com/google/btree v1.1.2
 	github.com/google/uuid v1.4.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
