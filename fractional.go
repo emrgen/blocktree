@@ -129,25 +129,25 @@ func (f *FracIndex) Clone() *FracIndex {
 }
 
 func (f *FracIndex) String() string {
-	ints := make([]int, len(f.bytes))
+	nums := make([]uint8, len(f.bytes))
 	for i, b := range f.bytes {
-		ints[i] = int(b)
+		nums[i] = b
 	}
 
-	return fmt.Sprintf("FracIndex(%v)", ints)
+	return fmt.Sprintf("FracIndex(%v)", nums)
 }
 
-func newBefore(index_bytes []byte) []byte {
-	for i := 0; i < len(index_bytes); i++ {
-		if uint8(index_bytes[i]) > terminator {
+func newBefore(indexBytes []byte) []byte {
+	for i := 0; i < len(indexBytes); i++ {
+		if indexBytes[i] > terminator {
 			bytes := make([]byte, i)
-			copy(bytes, index_bytes)
+			copy(bytes, indexBytes)
 			return bytes
 		}
 
-		if uint8(index_bytes[i]) > uint8(0) {
+		if indexBytes[i] > uint8(0) {
 			bytes := make([]byte, i+1)
-			copy(bytes, index_bytes)
+			copy(bytes, indexBytes)
 			bytes[i] -= 1
 			return bytes
 		}
@@ -156,17 +156,17 @@ func newBefore(index_bytes []byte) []byte {
 	panic("should never reach the end of a properly-terminated fractional index without finding a byte greater than 0")
 }
 
-func newAfter(index_bytes []byte) []byte {
-	for i := 0; i < len(index_bytes); i++ {
-		if index_bytes[i] < terminator {
+func newAfter(indexBytes []byte) []byte {
+	for i := 0; i < len(indexBytes); i++ {
+		if indexBytes[i] < terminator {
 			ret := make([]byte, i)
-			copy(ret, index_bytes)
+			copy(ret, indexBytes)
 			return ret
 		}
 
-		if index_bytes[i] < uint8(255) {
+		if indexBytes[i] < uint8(255) {
 			ret := make([]byte, i+1)
-			copy(ret, index_bytes)
+			copy(ret, indexBytes)
 			ret[i] += 1
 			return ret
 		}
