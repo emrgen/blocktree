@@ -1,13 +1,19 @@
 package blocktree
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
 
-type TxID uuid.UUID
+var (
+	ErrCreatesCycle  = fmt.Errorf("cycle detected")
+	ErrDetectedCycle = fmt.Errorf("cycle detected")
+)
+
+type TransactionID = uuid.UUID
 
 // Transaction is a collection of Ops that are applied to a Space.
 type Transaction struct {
@@ -21,19 +27,30 @@ type Transaction struct {
 
 func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
 	// check if transaction is not already applied
+	transaction, err := store.GetTransaction(tx.ID)
+	if err != nil {
+		return nil, err
+	}
+	if transaction != nil {
+		return nil, fmt.Errorf("transaction already applied")
+	}
 
 	//check if transaction is valid (no cycles, etc)
 
 	// load the referenced blocks
-	blocks := make(map[uuid.UUID]*Block)
 	relevantBlockIDs := tx.relevantBlockIDs()
+	if cycle, err := tx.createsCycles(store, relevantBlockIDs); err != nil {
+		return nil, err
+	} else if cycle {
+		return nil, fmt.Errorf("transaction creates cycles")
+	}
+
 	relevantBlocks, err := store.GetBlocks(relevantBlockIDs.ToSlice())
 	if err != nil {
 		return nil, err
 	}
 	stage := NewStageTable()
 	for _, block := range relevantBlocks {
-		blocks[block.ID] = block
 		stage.add(block)
 	}
 
@@ -220,8 +237,80 @@ func (tx *Transaction) moves() bool {
 	return false
 }
 
-func (tx *Transaction) createsCycles() bool {
-	return false
+// createsCycles returns true if the transaction creates cycles in the blocktree
+func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool, error) {
+	if !tx.moves() {
+		return false, nil
+	}
+
+	// load all relevant blocks
+	blockEdges, err := store.GetAncestorEdges(blockIDs.ToSlice())
+	if err != nil {
+		return false, err
+	}
+
+	moveTree := NewMoveTree(tx.SpaceID)
+	for _, edge := range blockEdges {
+		moveTree.addEdge(edge.parentID, edge.childID)
+	}
+
+	for _, op := range tx.Ops {
+		switch {
+		case op.Type == OpTypeInsert:
+			if op.At == nil {
+				return false, fmt.Errorf("invalid create op without at: %v", op)
+			}
+			switch {
+			case op.At.Position == PositionAfter || op.At.Position == PositionBefore:
+				parentID, ok := moveTree.getParent(op.At.BlockID)
+				if !ok {
+					return false, fmt.Errorf("cannot find parent for insert after/before: %v", op)
+				}
+				moveTree.addEdge(*parentID, op.BlockID)
+			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
+				if !moveTree.contains(op.At.BlockID) {
+					return true, nil
+				}
+				moveTree.addEdge(op.At.BlockID, op.BlockID)
+			case op.At.Position == PositionInside:
+				return false, fmt.Errorf("cannot insert inside a block: %v", op)
+			}
+		case op.Type == OpTypeMove:
+			if op.At == nil {
+				return false, fmt.Errorf("invalid move op without at: %v", op)
+			}
+			if op.At.BlockID == op.BlockID {
+				return false, fmt.Errorf("invalid move op with same block id: %v", op)
+			}
+
+			switch {
+			case op.At.Position == PositionAfter || op.At.Position == PositionBefore:
+				parentID, ok := moveTree.getParent(op.At.BlockID)
+				if !ok {
+					return false, fmt.Errorf("cannot find parent for move after/before: %v", op)
+				}
+				err := moveTree.Move(*parentID, op.BlockID)
+				if err != nil {
+					if errors.Is(ErrDetectedCycle, err) {
+						return true, nil
+					}
+					return false, err
+				}
+			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
+				err := moveTree.Move(op.At.BlockID, op.BlockID)
+				if err != nil {
+					if errors.Is(ErrDetectedCycle, err) {
+						return true, nil
+					}
+					return false, err
+				}
+			case op.At.Position == PositionInside:
+				continue
+			}
+		}
+	}
+
+	return false, nil
 }
 
 func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error) {

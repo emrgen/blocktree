@@ -389,15 +389,16 @@ const (
 // MoveTree helps to track block cycle in a space
 type MoveTree struct {
 	spaceId   SpaceID
-	blocks    mapset.Set[BlockID]
+	blocks    Set[BlockID]
 	backEdges map[BlockID]BlockID
 }
 
 // NewMoveTree creates a new MoveTree
 func NewMoveTree(spaceId SpaceID) *MoveTree {
+	blocks := NewSet(spaceId)
 	return &MoveTree{
 		spaceId:   spaceId,
-		blocks:    mapset.NewSet(spaceId),
+		blocks:    *blocks,
 		backEdges: make(map[BlockID]BlockID),
 	}
 }
@@ -421,7 +422,11 @@ func (mt *MoveTree) Move(parent, child BlockID) error {
 	}
 
 	// if child_id is already a child of parent_id, then the move is not needed
-	if mt.backEdges[child] == parent {
+	currParent, ok := mt.backEdges[child]
+	if !ok {
+		return errors.New("child block not found")
+	}
+	if currParent == parent {
 		return nil
 	}
 
@@ -431,10 +436,10 @@ func (mt *MoveTree) Move(parent, child BlockID) error {
 	for {
 		if blockId, ok := mt.backEdges[parentId]; ok {
 			if blockId == child {
-				return errors.New("move would create a cycle")
+				return ErrCreatesCycle
 			}
 			if visited.Contains(blockId) {
-				return errors.New("cycle detected in move tree")
+				return ErrDetectedCycle
 			}
 			visited.Add(blockId)
 		} else {
@@ -444,14 +449,31 @@ func (mt *MoveTree) Move(parent, child BlockID) error {
 
 	// move child to new parent
 	delete(mt.backEdges, child)
-	mt.AddEdge(parent, child)
+	mt.addEdge(parent, child)
 
 	return nil
 }
 
-// AddEdge adds a parent child connection
-func (mt *MoveTree) AddEdge(parent, child BlockID) {
+// addEdge adds a parent child connection
+func (mt *MoveTree) addEdge(parent, child BlockID) {
 	mt.blocks.Add(parent)
 	mt.blocks.Add(child)
 	mt.backEdges[child] = parent
+}
+
+// getParent returns the parent of a block
+func (mt *MoveTree) getParent(block BlockID) (*BlockID, bool) {
+	if parent, ok := mt.backEdges[block]; ok {
+		return &parent, true
+	}
+	return nil, false
+}
+
+func (mt *MoveTree) contains(block BlockID) bool {
+	return mt.blocks.Contains(block)
+}
+
+type BlockEdge struct {
+	parentID BlockID
+	childID  BlockID
 }
