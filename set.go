@@ -15,6 +15,10 @@ func NewSet[T comparable](entries ...T) *Set[T] {
 	}
 }
 
+func (s Set[T]) Remove(item T) {
+	delete(s.items, item)
+}
+
 func (s Set[T]) Add(item T) {
 	s.items[item] = true
 }
@@ -57,7 +61,7 @@ func (s Set[T]) Intersect(other Set[T]) *Set[T] {
 	return intersection
 }
 
-func (s Set[T]) Difference(other Set[T]) *Set[T] {
+func (s Set[T]) Difference(other *Set[T]) *Set[T] {
 	difference := NewSet[T]()
 	for k := range s.items {
 		if !other.Contains(k) {

@@ -3,6 +3,7 @@ package blocktree
 import (
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,17 +18,17 @@ type TransactionID = uuid.UUID
 
 // Transaction is a collection of Ops that are applied to a Space.
 type Transaction struct {
-	ID        uuid.UUID `json:"id"`
-	SpaceID   uuid.UUID
+	ID        TransactionID `json:"id"`
+	SpaceID   SpaceID
 	UserID    uuid.UUID
 	Time      time.Time
 	TxCounter int64
 	Ops       []Op
 }
 
-func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
+func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 	// check if transaction is not already applied
-	transaction, err := store.GetTransaction(tx.ID)
+	transaction, err := store.GetTransaction(&tx.SpaceID, &tx.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,9 +46,13 @@ func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
 		return nil, fmt.Errorf("transaction creates cycles")
 	}
 
-	relevantBlocks, err := store.GetBlocks(relevantBlockIDs.ToSlice())
+	relevantBlocks, err := store.GetBlocks(&tx.SpaceID, relevantBlockIDs.ToSlice())
 	if err != nil {
 		return nil, err
+	}
+
+	if len(relevantBlocks) != relevantBlockIDs.Cardinality() {
+		return nil, fmt.Errorf("cannot find all referenced blocks")
 	}
 	stage := NewStageTable()
 	for _, block := range relevantBlocks {
@@ -62,12 +67,18 @@ func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
 				return nil, fmt.Errorf("invalid create op without at: %v", op)
 			}
 
-			// ref block is parked
+			//check if block has type prop
+			if typ, ok := op.Props["type"]; !ok {
+				return nil, fmt.Errorf("invalid create op without type: %v", op)
+			} else if _, ok := typ.(string); !ok {
+				return nil, fmt.Errorf("invalid create op with non-string type: %v", op)
+			}
+
 			switch {
 			case op.At.Position == PositionAfter || op.At.Position == PositionBefore:
 				refBlock, ok := stage.parked(op.At.BlockID)
 				if ok {
-					block, err := op.IntoBlock(refBlock.ParentID)
+					block, err := op.IntoBlock(*refBlock.ParentID)
 					if err != nil {
 						return nil, err
 					}
@@ -109,7 +120,7 @@ func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
 					for _, block := range blocks {
 						stage.add(block)
 					}
-					block, err := op.IntoBlock(blocks[0].ParentID)
+					block, err := op.IntoBlock(blocks[0].ID)
 					if err != nil {
 						return nil, err
 					}
@@ -149,7 +160,7 @@ func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
 				}
 
 				parent := blocks[0]
-				block := NewBlock(parent.ID, op.BlockID, "")
+				block := NewBlock(op.BlockID, &parent.ID, "")
 				stage.add(block)
 			}
 		case op.Type == OpTypeUpdate:
@@ -189,12 +200,17 @@ func (tx *Transaction) Apply(store Store) (*BlockChange, error) {
 		}
 	}
 
+	logrus.Info("apply stage")
 	change, err := stage.Apply(tx)
 	if err != nil {
 		return nil, err
 	}
 
-	return change, nil
+	return &StoreChange{
+		blockChange:   change,
+		jsonDocChange: nil,
+		txChange:      nil,
+	}, nil
 }
 
 // relevantBlocks returns a set of preexisting block ids that are referenced by the transaction
@@ -209,7 +225,6 @@ func (tx *Transaction) relevantBlockIDs() *Set[BlockID] {
 					relevant.Add(op.At.BlockID)
 				}
 			}
-			relevant.Add(op.BlockID)
 			inserted.Add(op.BlockID)
 		} else {
 			if op.At != nil {
@@ -244,14 +259,14 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 	}
 
 	// load all relevant blocks
-	blockEdges, err := store.GetAncestorEdges(blockIDs.ToSlice())
+	blockEdges, err := store.GetAncestorEdges(&tx.SpaceID, blockIDs.ToSlice())
 	if err != nil {
 		return false, err
 	}
 
 	moveTree := NewMoveTree(tx.SpaceID)
 	for _, edge := range blockEdges {
-		moveTree.addEdge(edge.parentID, edge.childID)
+		moveTree.addEdge(edge.childID, edge.parentID)
 	}
 
 	for _, op := range tx.Ops {
@@ -266,12 +281,12 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 				if !ok {
 					return false, fmt.Errorf("cannot find parent for insert after/before: %v", op)
 				}
-				moveTree.addEdge(*parentID, op.BlockID)
+				moveTree.addEdge(op.BlockID, *parentID)
 			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
 				if !moveTree.contains(op.At.BlockID) {
 					return true, nil
 				}
-				moveTree.addEdge(op.At.BlockID, op.BlockID)
+				moveTree.addEdge(op.BlockID, op.At.BlockID)
 			case op.At.Position == PositionInside:
 				return false, fmt.Errorf("cannot insert inside a block: %v", op)
 			}
@@ -289,7 +304,7 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 				if !ok {
 					return false, fmt.Errorf("cannot find parent for move after/before: %v", op)
 				}
-				err := moveTree.Move(*parentID, op.BlockID)
+				err := moveTree.Move(op.BlockID, *parentID)
 				if err != nil {
 					if errors.Is(ErrDetectedCycle, err) {
 						return true, nil
@@ -297,7 +312,7 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 					return false, err
 				}
 			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
-				err := moveTree.Move(op.At.BlockID, op.BlockID)
+				err := moveTree.Move(op.BlockID, op.At.BlockID)
 				if err != nil {
 					if errors.Is(ErrDetectedCycle, err) {
 						return true, nil
@@ -315,7 +330,38 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 
 func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error) {
 	// load the referenced blocks
-	return nil, nil
+	switch {
+	case op.Type == OpTypeInsert || op.Type == OpTypeMove:
+		switch {
+		case op.At.Position == PositionAfter:
+			blocks, err := store.GetParentWithNextBlock(&tx.SpaceID, op.At.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			return blocks, nil
+		case op.At.Position == PositionBefore:
+			blocks, err := store.GetParentWithPrevBlock(&tx.SpaceID, op.At.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			return blocks, nil
+
+		case op.At.Position == PositionStart:
+			blocks, err := store.GetWithFirstChildBlock(&tx.SpaceID, op.At.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			return blocks, nil
+		case op.At.Position == PositionEnd:
+			blocks, err := store.GetWithLastChildBlock(&tx.SpaceID, op.At.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			return blocks, nil
+		}
+	}
+
+	return []*Block{}, nil
 }
 
 type BlockOps struct {
@@ -355,7 +401,7 @@ type Pointer struct {
 type Op struct {
 	Table   string                 `json:"table"`
 	Type    OpType                 `json:"type"`
-	BlockID uuid.UUID              `json:"block"`
+	BlockID BlockID                `json:"block_id"`
 	At      *Pointer               `json:"at"`
 	Props   map[string]interface{} `json:"props"`
 	Patch   *JsonDocPatch          `json:"patch"`
@@ -373,7 +419,7 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 	}
 
 	return &Block{
-		ParentID: parentID,
+		ParentID: &parentID,
 		Type:     blockType,
 		ID:       op.BlockID,
 		Index:    DefaultFracIndex(),

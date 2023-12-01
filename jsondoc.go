@@ -2,9 +2,11 @@ package blocktree
 
 import "github.com/google/uuid"
 
+type JsonDocID = uuid.UUID
+
 // JsonDoc is a json document with incremental updates.
 type JsonDoc struct {
-	ID      uuid.UUID              `json:"id"`
+	ID      JsonDocID              `json:"id"`
 	Content map[string]interface{} `json:"content"`
 }
 
@@ -29,4 +31,9 @@ func NewJsonDoc(id uuid.UUID) *JsonDoc {
 
 func (j *JsonDoc) Patch(patch JsonDocPatch) error {
 	return nil
+}
+
+// JsonDocChange is a change to a json document.
+type JsonDocChange struct {
+	change []*JsonDoc
 }
