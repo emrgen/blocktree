@@ -8,6 +8,11 @@ import (
 	"github.com/xlab/treeprint"
 )
 
+type BBlockID interface {
+	String() string
+	Equals(other BBlockID) bool
+}
+
 // BlockTree is a staging ground for loading block from db
 type BlockTree struct {
 	Root     *Block
@@ -115,6 +120,8 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 				return nil, errors.New("invalid position inside for insert block")
 			}
 
+			st.unpark(block.ID)
+			st.add(block)
 			st.change.addInserted(block)
 			st.change.addUpdated(parent)
 		case OpTypeMove:
@@ -155,6 +162,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 				return nil, errors.New("invalid position inside for move block")
 			}
 
+			st.add(block)
 			st.change.addUpdated(block)
 			st.change.addUpdated(parent)
 
@@ -240,7 +248,7 @@ func (st *StageTable) placeBefore(block *Block, nextID BlockID, action BlockChan
 	return nil
 }
 
-func (st *StageTable) placeAfter(block *Block, prevID BlockID, opType BlockChangeType) error {
+func (st *StageTable) placeAfter(block *Block, prevID BlockID, action BlockChangeType) error {
 	sibling, err := st.withNextSibling(prevID)
 	if err != nil {
 		return err
@@ -251,13 +259,13 @@ func (st *StageTable) placeAfter(block *Block, prevID BlockID, opType BlockChang
 
 	if len(sibling) == 1 {
 		block.Index = NewAfter(sibling[0].Index)
-		st.updateChange(block, opType)
+		st.updateChange(block, action)
 	} else if len(sibling) == 2 {
 		block.Index, err = NewBetween(sibling[0].Index, sibling[1].Index)
 		if err != nil {
 			return err
 		}
-		st.updateChange(block, opType)
+		st.updateChange(block, action)
 	} else {
 		return errors.New("invalid sibling count for place after")
 	}

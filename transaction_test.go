@@ -6,47 +6,75 @@ import (
 	"testing"
 )
 
-func TestNewMemSpace(t *testing.T) {
+var (
+	sid, _ = uuid.Parse("00000000-0000-0000-0000-000000000000")
+	b1, _  = uuid.Parse("00000000-0000-0000-0000-000000000001")
+	b2, _  = uuid.Parse("00000000-0000-0000-0000-000000000002")
+	b3, _  = uuid.Parse("00000000-0000-0000-0000-000000000003")
+	b4, _  = uuid.Parse("00000000-0000-0000-0000-000000000004")
+	b5, _  = uuid.Parse("00000000-0000-0000-0000-000000000005")
+	b6, _  = uuid.Parse("00000000-0000-0000-0000-000000000006")
+	b7, _  = uuid.Parse("00000000-0000-0000-0000-000000000007")
+	b8, _  = uuid.Parse("00000000-0000-0000-0000-000000000008")
+	b9, _  = uuid.Parse("00000000-0000-0000-0000-000000000009")
+	b10, _ = uuid.Parse("00000000-0000-0000-0000-000000000010")
+)
+
+func insertOp(blockID uuid.UUID, typ string, refID uuid.UUID, pos PointerPosition) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeInsert,
+		BlockID: blockID,
+		At: &Pointer{
+			BlockID:  refID,
+			Position: pos,
+		},
+		Props: map[string]interface{}{
+			"type": typ,
+		},
+	}
+}
+
+func TestInsertOp(t *testing.T) {
 	var err error
 	store := NewMemStore()
 	space := &Space{
-		ID:   uuid.New(),
+		ID:   sid,
 		Name: "",
 	}
 	err = store.CreateSpace(space)
 	assert.NoError(t, err)
 
 	// create a block transaction
-	b1 := uuid.New()
 	tx := &Transaction{
 		ID:      uuid.New(),
-		SpaceID: space.ID,
+		SpaceID: sid,
 		Ops: []Op{
-			{
-				Table:   "block",
-				Type:    OpTypeInsert,
-				BlockID: b1,
-				At: &Pointer{
-					BlockID:  space.ID,
-					Position: PositionStart,
-				},
-				Props: map[string]interface{}{
-					"type": "page",
-				},
-			},
+			insertOp(b1, "page", sid, PositionStart),
+			insertOp(b2, "title", b1, PositionStart),
+			insertOp(b3, "p1", b2, PositionAfter),
+			insertOp(b4, "p2", b3, PositionBefore),
+			insertOp(b5, "p3", b1, PositionEnd),
 		},
 	}
 
 	// apply the transaction
 	changes, err := tx.Prepare(store)
 	assert.NoError(t, err)
+	assert.Condition(t, func() bool {
+		return changes != nil
+	})
 
 	// apply the change to the store
 	err = store.ApplyChange(&space.ID, changes)
 	assert.NoError(t, err)
 
-	blocks, err := store.GetBlocks(&space.ID, []BlockID{b1})
-	assert.Len(t, blocks, 1)
-	assert.Equal(t, b1, blocks[0].ID)
+	block, err := store.GetBlock(&space.ID, b1)
 	assert.NoError(t, err)
+	assert.Equal(t, b1, block.ID)
+
+	store.Print(&sid)
+}
+
+func TestMoveOp(t *testing.T) {
 }

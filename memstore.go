@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/btree"
 	"github.com/sirupsen/logrus"
+	"github.com/xlab/treeprint"
 )
 
 var (
@@ -160,7 +161,7 @@ func (ms *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 		space.parents[block.ID] = *block.ParentID
 		children, ok := space.children[*block.ParentID]
 		if !ok {
-			children = btree.NewG(2, blockLessFunc)
+			children = btree.NewG(10, blockLessFunc)
 			space.children[*block.ParentID] = children
 		}
 		children.ReplaceOrInsert(block)
@@ -237,4 +238,32 @@ func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
 
 	space.txs[tx.ID] = tx
 	return nil
+}
+
+func (ms *MemStore) Print(spaceID *SpaceID) {
+	space, ok := ms.spaces[*spaceID]
+	if !ok {
+		logrus.Warnf("space %v not found", *spaceID)
+		return
+	}
+
+	tree := treeprint.New()
+	branch := tree.AddBranch(fmt.Sprintf("space: %v", *spaceID))
+	traverseStore(space, spaceID, branch)
+
+	fmt.Println(tree.String())
+}
+
+func traverseStore(space *spaceStore, parentID *BlockID, tree treeprint.Tree) {
+	children, ok := space.children[*parentID]
+	if !ok {
+		return
+	}
+
+	children.Ascend(func(item *Block) bool {
+
+		branch := tree.AddBranch(fmt.Sprintf("%v: (%v) %v", item.Type, item.Index.String(), item.ID))
+		traverseStore(space, &item.ID, branch)
+		return true
+	})
 }

@@ -47,7 +47,7 @@ func NewBlock(blockID BlockID, parentID *ParentID, blockType string) *Block {
 
 // Less allows btree entry
 func (b *Block) Less(other *Block) bool {
-	return b.Index.Compare(other.Index) < 0 || b.ID.String() < other.ID.String()
+	return b.Index.Compare(other.Index) < 0
 }
 
 func blockLessFunc(a, b *Block) bool {
