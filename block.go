@@ -45,6 +45,18 @@ func NewBlock(blockID BlockID, parentID *ParentID, blockType string) *Block {
 	}
 }
 
+func (b *Block) Clone() *Block {
+	return &Block{
+		Type:     b.Type,
+		ID:       b.ID,
+		ParentID: b.ParentID,
+		Index:    b.Index.Clone(),
+		Props:    b.Props,
+		Deleted:  b.Deleted,
+		Erased:   b.Erased,
+	}
+}
+
 // Less allows btree entry
 func (b *Block) Less(other *Block) bool {
 	return b.Index.Compare(other.Index) < 0

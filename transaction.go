@@ -39,23 +39,23 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 	//check if transaction is valid (no cycles, etc)
 
 	// load the referenced blocks
-	relevantBlockIDs := tx.relevantBlockIDs()
-	if cycle, err := tx.createsCycles(store, relevantBlockIDs); err != nil {
+	existingBlockIDs, _ := tx.relevantBlockIDs()
+	if cycle, err := tx.createsCycles(store, existingBlockIDs); err != nil {
 		return nil, err
 	} else if cycle {
 		return nil, fmt.Errorf("transaction creates cycles")
 	}
 
-	relevantBlocks, err := store.GetBlocks(&tx.SpaceID, relevantBlockIDs.ToSlice())
+	relevantBlocks, err := store.GetBlocks(&tx.SpaceID, existingBlockIDs.ToSlice())
 	if err != nil {
 		return nil, err
 	}
 
-	if len(relevantBlocks) != relevantBlockIDs.Cardinality() {
+	if len(relevantBlocks) != existingBlockIDs.Cardinality() {
 		return nil, fmt.Errorf("cannot find all referenced blocks")
 	}
 	stage := NewStageTable()
-	logrus.Infof("relevant blocks: %v", relevantBlockIDs.ToSlice())
+	logrus.Infof("relevant blocks: %v", existingBlockIDs.ToSlice())
 	for _, block := range relevantBlocks {
 		stage.add(block)
 	}
@@ -134,9 +134,39 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			if op.At == nil {
 				return nil, fmt.Errorf("invalid move op without at: %v", op)
 			}
+
 			if op.At.BlockID == op.BlockID {
 				return nil, fmt.Errorf("invalid move op with same block id: %v", op)
 			}
+
+			// load blocks old parent
+			// if the block is inserted in this transaction, it is not in the store yet
+			// its parent can also be inserted in this transaction
+			// so we need to check the stage first
+			parked, ok := stage.parked(op.BlockID)
+			var parent *Block
+			if ok {
+				if parked.ParentID == nil {
+					return nil, fmt.Errorf("newly inserted block has no parent id set: %v", op)
+				}
+				parkedParent, ok := stage.parked(*parked.ParentID)
+				if ok {
+					parent = parkedParent
+				} else {
+					parent, err = store.GetBlock(&tx.SpaceID, *parked.ParentID)
+					if err != nil {
+						return nil, err
+					}
+				}
+			} else {
+				parent, err = store.GetParentBlock(&tx.SpaceID, op.BlockID)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			stage.add(parent)
+
 			if _, ok := stage.parked(op.At.BlockID); !ok {
 				continue
 			}
@@ -160,9 +190,31 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 					continue
 				}
 
-				parent := blocks[0]
 				block := NewBlock(op.BlockID, &parent.ID, "")
 				stage.add(block)
+			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
+				logrus.Infof("load parent block %v", op.At.BlockID)
+				blocks, err := tx.loadRelevantBlocks(store, &op)
+				if err != nil {
+					return nil, err
+				}
+
+				if len(blocks) < 1 {
+					return nil, fmt.Errorf("cannot find referenced block for move start/end: %v", op)
+				}
+				for _, block := range blocks {
+					stage.add(block)
+				}
+
+				_, ok := stage.parked(op.BlockID)
+				if ok {
+					continue
+				}
+
+				block := NewBlock(op.BlockID, &parent.ID, "")
+				stage.add(block)
+			case op.At.Position == PositionInside:
+				return nil, fmt.Errorf("cannot move inside a block: %v", op)
 			}
 		case op.Type == OpTypeUpdate:
 			if ok := stage.contains(op.BlockID); ok {
@@ -215,7 +267,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 }
 
 // relevantBlocks returns a set of preexisting block ids that are referenced by the transaction
-func (tx *Transaction) relevantBlockIDs() *Set[BlockID] {
+func (tx *Transaction) relevantBlockIDs() (*Set[BlockID], *Set[BlockID]) {
 	relevant := NewSet[uuid.UUID]()
 	inserted := NewSet[uuid.UUID]()
 
@@ -240,7 +292,7 @@ func (tx *Transaction) relevantBlockIDs() *Set[BlockID] {
 		}
 	}
 
-	return relevant
+	return relevant, inserted
 }
 
 func (tx *Transaction) moves() bool {
@@ -330,6 +382,7 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 }
 
 func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error) {
+	relevantBlocks := make([]*Block, 0)
 	// load the referenced blocks
 	switch {
 	case op.Type == OpTypeInsert || op.Type == OpTypeMove:
@@ -339,30 +392,29 @@ func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error)
 			if err != nil {
 				return nil, err
 			}
-			return blocks, nil
+			relevantBlocks = append(relevantBlocks, blocks...)
 		case op.At.Position == PositionBefore:
 			blocks, err := store.GetParentWithPrevBlock(&tx.SpaceID, op.At.BlockID)
 			if err != nil {
 				return nil, err
 			}
-			return blocks, nil
-
+			relevantBlocks = append(relevantBlocks, blocks...)
 		case op.At.Position == PositionStart:
 			blocks, err := store.GetWithFirstChildBlock(&tx.SpaceID, op.At.BlockID)
 			if err != nil {
 				return nil, err
 			}
-			return blocks, nil
+			relevantBlocks = append(relevantBlocks, blocks...)
 		case op.At.Position == PositionEnd:
 			blocks, err := store.GetWithLastChildBlock(&tx.SpaceID, op.At.BlockID)
 			if err != nil {
 				return nil, err
 			}
-			return blocks, nil
+			relevantBlocks = append(relevantBlocks, blocks...)
 		}
 	}
 
-	return []*Block{}, nil
+	return relevantBlocks, nil
 }
 
 type BlockOps struct {

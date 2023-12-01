@@ -2,6 +2,7 @@ package blocktree
 
 import (
 	"errors"
+	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/btree"
 	"github.com/sirupsen/logrus"
@@ -123,17 +124,18 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			st.unpark(block.ID)
 			st.add(block)
 			st.change.addInserted(block)
-			st.change.addUpdated(parent)
+			st.change.addPropSet(parent)
 		case OpTypeMove:
-			block, ok := st.parking[op.BlockID]
+			block, ok := st.block(op.BlockID)
 			if !ok {
-				return nil, errors.New("move block not found")
+				return nil, errors.New(fmt.Sprintf("move block not found: %v", op.BlockID))
 			}
 			parentId := block.ParentID
 			if parentId == nil {
-				return nil, errors.New("old parent id is nil for move block")
+				return nil, errors.New(fmt.Sprintf("old parent id is nil for move block: %v", op.BlockID))
 			}
 			parent, ok := st.block(*parentId)
+			logrus.Infof("existing blocks: %v", st.existingIDs())
 			if !ok {
 				return nil, errors.New("old parent block not found for move block")
 			}
@@ -164,7 +166,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 
 			st.add(block)
 			st.change.addUpdated(block)
-			st.change.addUpdated(parent)
+			st.change.addPropSet(parent)
 
 			//case OpTypeUpdate:
 			//	if block, ok := blocks[op.BlockID]; ok {
@@ -203,6 +205,14 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 	return &st.change, nil
 }
 
+func (st *StageTable) existingIDs() []BlockID {
+	ids := make([]BlockID, 0, len(st.blocks))
+	for id := range st.blocks {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
 func (st *StageTable) paceAtStart(block *Block, parentID BlockID, action BlockChangeType) {
 	firstChild, ok := st.firstChild(parentID)
 	if ok {
@@ -210,6 +220,7 @@ func (st *StageTable) paceAtStart(block *Block, parentID BlockID, action BlockCh
 	} else {
 		block.Index = DefaultFracIndex()
 	}
+	block.ParentID = &parentID
 	st.updateChange(block, action)
 }
 
@@ -220,6 +231,7 @@ func (st *StageTable) paceAtEnd(block *Block, parentID BlockID, action BlockChan
 	} else {
 		block.Index = DefaultFracIndex()
 	}
+	block.ParentID = &parentID
 	st.updateChange(block, action)
 }
 
@@ -234,12 +246,14 @@ func (st *StageTable) placeBefore(block *Block, nextID BlockID, action BlockChan
 
 	if len(sibling) == 1 {
 		block.Index = NewBefore(sibling[0].Index)
+		block.ParentID = sibling[0].ParentID
 		st.updateChange(block, action)
 	} else if len(sibling) == 2 {
 		block.Index, err = NewBetween(sibling[1].Index, sibling[0].Index)
 		if err != nil {
 			return err
 		}
+		block.ParentID = sibling[0].ParentID
 		st.updateChange(block, action)
 	} else {
 		return errors.New("invalid sibling count for place before")
@@ -259,12 +273,14 @@ func (st *StageTable) placeAfter(block *Block, prevID BlockID, action BlockChang
 
 	if len(sibling) == 1 {
 		block.Index = NewAfter(sibling[0].Index)
+		block.ParentID = sibling[0].ParentID
 		st.updateChange(block, action)
 	} else if len(sibling) == 2 {
 		block.Index, err = NewBetween(sibling[0].Index, sibling[1].Index)
 		if err != nil {
 			return err
 		}
+		block.ParentID = sibling[0].ParentID
 		st.updateChange(block, action)
 	} else {
 		return errors.New("invalid sibling count for place after")
@@ -278,7 +294,7 @@ func (st *StageTable) updateChange(block *Block, changeType BlockChangeType) {
 	case Inserted:
 		st.change.inserted.Add(block)
 	case Updated:
-		st.change.updated.Add(block)
+		st.change.moved.Add(block)
 	case PropSet:
 		st.change.propSet.Add(block)
 	}
@@ -420,7 +436,7 @@ func (st *StageTable) contains(id BlockID) bool {
 // BlockChange tracks block changes in a transaction
 type BlockChange struct {
 	inserted *Set[*Block]
-	updated  *Set[*Block]
+	moved    *Set[*Block]
 	propSet  *Set[*Block]
 }
 
@@ -428,7 +444,7 @@ type BlockChange struct {
 func newBlockChange() BlockChange {
 	return BlockChange{
 		inserted: NewSet[*Block](),
-		updated:  NewSet[*Block](),
+		moved:    NewSet[*Block](),
 		propSet:  NewSet[*Block](),
 	}
 }
@@ -444,8 +460,8 @@ func (bc *BlockChange) Inserted() []*Block {
 }
 
 func (bc *BlockChange) Updated() []*Block {
-	blocks := make([]*Block, 0, bc.updated.Cardinality())
-	bc.updated.Difference(bc.inserted).ForEach(func(item *Block) bool {
+	blocks := make([]*Block, 0, bc.moved.Cardinality())
+	bc.moved.Difference(bc.inserted).ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
 		return true
 	})
@@ -468,7 +484,7 @@ func (bc *BlockChange) addInserted(id *Block) {
 }
 
 func (bc *BlockChange) addUpdated(id *Block) {
-	bc.updated.Add(id)
+	bc.moved.Add(id)
 }
 
 func (bc *BlockChange) addPropSet(id *Block) {
@@ -476,14 +492,14 @@ func (bc *BlockChange) addPropSet(id *Block) {
 }
 
 func (bc *BlockChange) empty() bool {
-	return bc.inserted.Cardinality() == 0 && bc.updated.Cardinality() == 0 && bc.propSet.Cardinality() == 0
+	return bc.inserted.Cardinality() == 0 && bc.moved.Cardinality() == 0 && bc.propSet.Cardinality() == 0
 }
 
 type BlockChangeType string
 
 const (
 	Inserted BlockChangeType = "inserted"
-	Updated  BlockChangeType = "updated" // includes move, link, unlink, delete, erase
+	Updated  BlockChangeType = "moved" // includes move, link, unlink, delete, erase
 	PropSet  BlockChangeType = "prop_set"
 )
 

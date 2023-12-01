@@ -1,6 +1,9 @@
 package blocktree
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // ref: https://github.com/drifting-in-space/fractional_index/blob/main/src/fract_index.rs
 
@@ -115,6 +118,10 @@ func (f *FracIndex) Compare(other *FracIndex) int {
 
 func (f *FracIndex) Equals(other *FracIndex) bool {
 	return f.Compare(other) == 0
+}
+
+func (f *FracIndex) Clone() *FracIndex {
+	return fromBytes(bytes.Clone(f.bytes))
 }
 
 func (f *FracIndex) String() string {

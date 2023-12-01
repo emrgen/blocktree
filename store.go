@@ -16,6 +16,7 @@ type BlockStore interface {
 	CreateSpace(space *Space) error
 	CreateBlock(spaceID *SpaceID, block *Block) error
 	GetBlock(spaceID *SpaceID, id BlockID) (*Block, error)
+	GetParentBlock(spaceID *SpaceID, id BlockID) (*Block, error)
 	GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error)
 	GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)

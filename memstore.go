@@ -29,8 +29,61 @@ func newSpaceStore() *spaceStore {
 	}
 }
 
+func (ss *spaceStore) AddBlock(block *Block) {
+	ss.blocks[block.ID] = block.Clone()
+	if block.ParentID != nil {
+		ss.parents[block.ID] = *block.ParentID
+		children, ok := ss.children[*block.ParentID]
+		if !ok {
+			children = btree.NewG(10, blockLessFunc)
+			ss.children[*block.ParentID] = children
+		}
+		children.ReplaceOrInsert(block)
+
+	}
+
+	if block.Props != nil {
+		ss.props[block.ID] = block.Props
+	}
+}
+
+func (ss *spaceStore) RemoveBlock(id BlockID) {
+	block, ok := ss.blocks[id]
+	if !ok {
+		return
+	}
+
+	logrus.Info("removing block from store", block.ParentID)
+	if block.ParentID != nil {
+		delete(ss.parents, id)
+		children, ok := ss.children[*block.ParentID]
+		if !ok {
+			return
+		}
+
+		logrus.Infof("removing block %v from parent %v", id, *block.ParentID)
+		children.Delete(block)
+	}
+
+	delete(ss.blocks, id)
+}
+
 type MemStore struct {
 	spaces map[SpaceID]*spaceStore
+}
+
+func (ms *MemStore) GetParentBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
+	space, ok := ms.spaces[*spaceID]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
+	}
+
+	parentID, ok := space.parents[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("block %v not found", id))
+	}
+
+	return space.blocks[parentID].Clone(), nil
 }
 
 func (ms *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
@@ -43,7 +96,7 @@ func (ms *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Blo
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("block %v not found", id))
 	}
-	blocks := []*Block{block}
+	blocks := []*Block{block.Clone()}
 
 	children, ok := space.children[id]
 	if !ok {
@@ -55,7 +108,7 @@ func (ms *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Blo
 	}
 
 	children.Ascend(func(item *Block) bool {
-		blocks = append(blocks, item)
+		blocks = append(blocks, item.Clone())
 		return true
 	})
 
@@ -72,7 +125,7 @@ func (ms *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Bloc
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("block %v not found", id))
 	}
-	blocks := []*Block{block}
+	blocks := []*Block{block.Clone()}
 
 	children, ok := space.children[id]
 	if !ok {
@@ -84,7 +137,7 @@ func (ms *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Bloc
 	}
 
 	children.Descend(func(item *Block) bool {
-		blocks = append(blocks, item)
+		blocks = append(blocks, item.Clone())
 		return true
 	})
 
@@ -123,6 +176,10 @@ func NewMemStore() *MemStore {
 }
 
 func (ms *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
+	if change == nil {
+		return errors.New("cannot apply nil change to store")
+	}
+
 	logrus.Info("applying change to store")
 	// all changes are part of a single transaction
 	space, ok := ms.spaces[*spaceID]
@@ -139,6 +196,29 @@ func (ms *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
 				return err
 			}
 		}
+
+		for _, block := range blockChange.moved.ToSlice() {
+			logrus.Infof("updating block %v", block)
+			storeBlock, ok := space.blocks[block.ID]
+			if !ok {
+				return errors.New(fmt.Sprintf("move block not found, %v", block.ID))
+			}
+			space.RemoveBlock(block.ID)
+
+			storeBlock.ParentID = block.ParentID
+			storeBlock.Index = block.Index
+			space.AddBlock(storeBlock)
+		}
+	}
+
+	if change.txChange != nil {
+		//TODO implement me
+		panic("implement me")
+	}
+
+	if change.jsonDocChange != nil {
+		//TODO implement me
+		panic("implement me")
 	}
 
 	return nil
@@ -156,21 +236,7 @@ func (ms *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 		ms.spaces[*spaceID] = space
 	}
 
-	space.blocks[block.ID] = block
-	if block.ParentID != nil {
-		space.parents[block.ID] = *block.ParentID
-		children, ok := space.children[*block.ParentID]
-		if !ok {
-			children = btree.NewG(10, blockLessFunc)
-			space.children[*block.ParentID] = children
-		}
-		children.ReplaceOrInsert(block)
-
-	}
-
-	if block.Props != nil {
-		space.props[block.ID] = block.Props
-	}
+	space.AddBlock(block)
 
 	return nil
 }
@@ -181,7 +247,7 @@ func (ms *MemStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
 
-	return space.blocks[id], nil
+	return space.blocks[id].Clone(), nil
 }
 
 func (ms *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error) {
@@ -193,7 +259,7 @@ func (ms *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error)
 	blocks := make([]*Block, 0, len(ids))
 	for _, id := range ids {
 		if block, ok := space.blocks[id]; ok {
-			blocks = append(blocks, block)
+			blocks = append(blocks, block.Clone())
 		}
 	}
 	return blocks, nil

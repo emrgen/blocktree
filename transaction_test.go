@@ -35,14 +35,30 @@ func insertOp(blockID uuid.UUID, typ string, refID uuid.UUID, pos PointerPositio
 	}
 }
 
+func moveOp(blockID uuid.UUID, refID uuid.UUID, pos PointerPosition) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeMove,
+		BlockID: blockID,
+		At: &Pointer{
+			BlockID:  refID,
+			Position: pos,
+		},
+	}
+}
+
+func createSpace(store *MemStore, spaceID uuid.UUID) error {
+	space := &Space{
+		ID:   spaceID,
+		Name: "",
+	}
+	return store.CreateSpace(space)
+}
+
 func TestInsertOp(t *testing.T) {
 	var err error
 	store := NewMemStore()
-	space := &Space{
-		ID:   sid,
-		Name: "",
-	}
-	err = store.CreateSpace(space)
+	err = createSpace(store, sid)
 	assert.NoError(t, err)
 
 	// create a block transaction
@@ -66,15 +82,68 @@ func TestInsertOp(t *testing.T) {
 	})
 
 	// apply the change to the store
-	err = store.ApplyChange(&space.ID, changes)
+	err = store.ApplyChange(&sid, changes)
 	assert.NoError(t, err)
 
-	block, err := store.GetBlock(&space.ID, b1)
+	block, err := store.GetBlock(&sid, b1)
 	assert.NoError(t, err)
 	assert.Equal(t, b1, block.ID)
 
 	store.Print(&sid)
 }
 
+func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
+	var err error
+	err = createSpace(store, sid)
+	if err != nil {
+		return err
+	}
+
+	tx := &Transaction{
+		ID:      uuid.New(),
+		SpaceID: sid,
+		Ops: []Op{
+			insertOp(b1, "p1", sid, PositionEnd),
+			insertOp(b2, "p2", sid, PositionEnd),
+			insertOp(b3, "p3", sid, PositionEnd),
+			insertOp(b4, "p4", sid, PositionEnd),
+			insertOp(b5, "p5", sid, PositionEnd),
+		},
+	}
+
+	changes, _ := tx.Prepare(store)
+	err = store.ApplyChange(&sid, changes)
+	return err
+}
+
 func TestMoveOp(t *testing.T) {
+	var err error
+	store := NewMemStore()
+	err = prepareSpace(store, sid)
+	assert.NoError(t, err)
+
+	tx := &Transaction{
+		ID:      uuid.New(),
+		SpaceID: sid,
+		Ops: []Op{
+			moveOp(b1, b2, PositionStart),
+			moveOp(b3, b2, PositionEnd),
+			moveOp(b4, b1, PositionAfter),
+			moveOp(b5, b3, PositionBefore),
+		},
+	}
+
+	_, err = store.GetBlock(&sid, b1)
+	assert.NoError(t, err)
+
+	changes, err := tx.Prepare(store)
+	assert.NoError(t, err)
+	assert.Condition(t, func() bool {
+		return changes != nil
+	})
+
+	err = store.ApplyChange(&sid, changes)
+	assert.NoError(t, err)
+
+	store.Print(&sid)
 }
