@@ -2,15 +2,15 @@ package blocktree
 
 import "github.com/google/uuid"
 
-// Json document with incremental updates.
+// JsonDoc is a json document with incremental updates.
 type JsonDoc struct {
 	ID      uuid.UUID              `json:"id"`
 	Content map[string]interface{} `json:"content"`
 }
 
 type JsonDocPatch struct {
-	id  uuid.UUID        `json:"id"`
-	ops []JsonDocPatchOp `json:"ops"`
+	ID  uuid.UUID        `json:"id"`
+	Ops []JsonDocPatchOp `json:"ops"`
 }
 
 type JsonDocPatchOp struct {

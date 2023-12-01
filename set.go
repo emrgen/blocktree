@@ -1,0 +1,71 @@
+package blocktree
+
+type Set[T comparable] struct {
+	items map[T]bool
+}
+
+func NewSet[T comparable]() *Set[T] {
+	return &Set[T]{
+		items: make(map[T]bool),
+	}
+}
+
+func (s Set[T]) Add(item T) {
+	s.items[item] = true
+}
+
+func (s Set[T]) Contains(item T) bool {
+	_, ok := s.items[item]
+	return ok
+}
+
+func (s Set[T]) Cardinality() int {
+	return len(s.items)
+}
+
+func (s Set[T]) ToSlice() []T {
+	var slice []T
+	for k := range s.items {
+		slice = append(slice, k)
+	}
+	return slice
+}
+
+func (s Set[T]) Union(other Set[T]) *Set[T] {
+	union := NewSet[T]()
+	for k := range s.items {
+		union.Add(k)
+	}
+	for k := range other.items {
+		union.Add(k)
+	}
+	return union
+}
+
+func (s Set[T]) Intersect(other Set[T]) *Set[T] {
+	intersection := NewSet[T]()
+	for k := range s.items {
+		if other.Contains(k) {
+			intersection.Add(k)
+		}
+	}
+	return intersection
+}
+
+func (s Set[T]) Difference(other Set[T]) *Set[T] {
+	difference := NewSet[T]()
+	for k := range s.items {
+		if !other.Contains(k) {
+			difference.Add(k)
+		}
+	}
+	return difference
+}
+
+func (s Set[T]) ForEach(cb func(T) bool) {
+	for k := range s.items {
+		if !cb(k) {
+			break
+		}
+	}
+}

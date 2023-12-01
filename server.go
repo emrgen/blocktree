@@ -1,5 +1,15 @@
 package blocktree
 
-func Server(config Config) error {
+type Server struct {
+	Config *Config
+}
+
+func NewServer(config *Config) *Server {
+	return &Server{
+		Config: config,
+	}
+}
+
+func (s *Server) Start() error {
 	return nil
 }
