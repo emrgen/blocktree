@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/btree"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -31,8 +32,8 @@ type MemStore struct {
 	spaces map[SpaceID]*spaceStore
 }
 
-func (s *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
-	space, ok := s.spaces[*spaceID]
+func (ms *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
@@ -60,8 +61,8 @@ func (s *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Bloc
 	return blocks, nil
 }
 
-func (s *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
-	space, ok := s.spaces[*spaceID]
+func (ms *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
@@ -89,24 +90,24 @@ func (s *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Block
 	return blocks, nil
 }
 
-func (s *MemStore) GetParentWithNextBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+func (ms *MemStore) GetParentWithNextBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *MemStore) GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+func (ms *MemStore) GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *MemStore) CreateSpace(space *Space) error {
-	if _, ok := s.spaces[space.ID]; ok {
+func (ms *MemStore) CreateSpace(space *Space) error {
+	if _, ok := ms.spaces[space.ID]; ok {
 		return errors.New(fmt.Sprintf("space %v already exists", space.ID))
 	}
 
-	s.spaces[space.ID] = newSpaceStore()
+	ms.spaces[space.ID] = newSpaceStore()
 	spaceBlock := NewBlock(space.ID, nil, "space")
-	err := s.CreateBlock(&space.ID, spaceBlock)
+	err := ms.CreateBlock(&space.ID, spaceBlock)
 	if err != nil {
 		return err
 	}
@@ -120,33 +121,38 @@ func NewMemStore() *MemStore {
 	}
 }
 
-func (s *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
+func (ms *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
+	logrus.Info("applying change to store")
 	// all changes are part of a single transaction
-	space, ok := s.spaces[*spaceID]
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		space = newSpaceStore()
-		s.spaces[*spaceID] = space
+		ms.spaces[*spaceID] = space
 	}
 
 	if change.blockChange != nil {
-		change.blockChange.inserted.ForEach(func(item *Block) bool {
-			return false
-		})
+		blockChange := change.blockChange
+		for _, block := range blockChange.inserted.ToSlice() {
+			err := ms.CreateBlock(spaceID, block)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
 }
 
-func (s *MemStore) PutSpace(spaceID *SpaceID) error {
-	s.spaces[*spaceID] = newSpaceStore()
+func (ms *MemStore) PutSpace(spaceID *SpaceID) error {
+	ms.spaces[*spaceID] = newSpaceStore()
 	return nil
 }
 
-func (s *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
-	space, ok := s.spaces[*spaceID]
+func (ms *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		space = newSpaceStore()
-		s.spaces[*spaceID] = space
+		ms.spaces[*spaceID] = space
 	}
 
 	space.blocks[block.ID] = block
@@ -168,8 +174,8 @@ func (s *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 	return nil
 }
 
-func (s *MemStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
-	space, ok := s.spaces[*spaceID]
+func (ms *MemStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
@@ -177,8 +183,8 @@ func (s *MemStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
 	return space.blocks[id], nil
 }
 
-func (s *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error) {
-	space, ok := s.spaces[*spaceID]
+func (ms *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error) {
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
@@ -192,9 +198,9 @@ func (s *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error) 
 	return blocks, nil
 }
 
-func (s *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEdge, error) {
+func (ms *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEdge, error) {
 	edges := make([]BlockEdge, 0)
-	space, ok := s.spaces[*spaceID]
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
@@ -218,15 +224,15 @@ func (s *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEdg
 	return edges, nil
 }
 
-func (s *MemStore) GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error) {
+func (ms *MemStore) GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error) {
 	return nil, nil
 }
 
-func (s *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
-	space, ok := s.spaces[*spaceID]
+func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
+	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		space = newSpaceStore()
-		s.spaces[*spaceID] = space
+		ms.spaces[*spaceID] = space
 	}
 
 	space.txs[tx.ID] = tx

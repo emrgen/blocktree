@@ -200,7 +200,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 		}
 	}
 
-	logrus.Info("apply stage")
+	logrus.Info("applying transaction ", tx.ID)
 	change, err := stage.Apply(tx)
 	if err != nil {
 		return nil, err
@@ -430,5 +430,9 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 }
 
 func (op *Op) String() string {
+	switch op.Type {
+	case OpTypeInsert:
+		return fmt.Sprintf("%s %s %s %s %s", op.Type, op.BlockID, op.At.Position, op.At.BlockID, op.Props)
+	}
 	return fmt.Sprintf("%s %s %s", op.Type, op.BlockID, op.At)
 }

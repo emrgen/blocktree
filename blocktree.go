@@ -72,99 +72,212 @@ func NewStageTable() *StageTable {
 	}
 }
 
-func (bt *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
-	// load the referenced blocks
-	//blocks := NewSet[BlockID]()
-	stage := NewStageTable()
+func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 	for _, op := range tx.Ops {
-		logrus.Infof("applying op: %v", op)
-		//switch op.Type {
-		//case OpTypeInsert:
-		//	block := &Block{
-		//		Type:     op.BlockType,
-		//		ID:       op.BlockID,
-		//		ParentID: op.ParentID,
-		//		Index:    op.Index,
-		//		Props:    op.Props,
-		//		Deleted:  false,
-		//		Erased:   false,
-		//	}
-		//	blocks[block.ID] = block
-		//	stage.add(block)
-		//case OpTypeUpdate:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.Props = op.Props
-		//		stage.updateChange(block, Updated)
-		//	}
-		//case OpTypePatch:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.Props = op.Props
-		//		stage.updateChange(block, PropSet)
-		//	}
-		//case OpTypeMove:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.ParentID = op.ParentID
-		//		stage.updateChange(block, Updated)
-		//	}
-		//case OpTypeLink:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.ParentID = op.ParentID
-		//		stage.updateChange(block, Updated)
-		//	}
-		//case OpTypeUnlink:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.ParentID = op.ParentID
-		//		stage.updateChange(block, Updated)
-		//	}
-		//case OpTypeDelete:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.Deleted = true
-		//		stage.updateChange(block, Updated)
-		//	}
-		//case OpTypeErase:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.Erased = true
-		//		stage.updateChange(block, Updated)
-		//	}
-		//}
+		logrus.Infof("applying op: %s", op.String())
+		switch op.Type {
+		case OpTypeInsert:
+			block, ok := st.parking[op.BlockID]
+			if !ok {
+				return nil, errors.New("insert block not found")
+			}
+			// NOTE: space insertion is a special case
+			// not need to update index
+			if block.Type == "space" {
+				st.change.addInserted(block)
+				continue
+			}
+
+			parentId := block.ParentID
+			if parentId == nil {
+				return nil, errors.New("parent id is nil for insert block")
+			}
+			parent, ok := st.block(op.At.BlockID)
+			if !ok {
+				return nil, errors.New("parent block not found for insert at start")
+			}
+			switch op.At.Position {
+			case PositionStart:
+				st.paceAtStart(block, op.At.BlockID, Inserted)
+			case PositionEnd:
+				st.paceAtEnd(block, op.At.BlockID, Inserted)
+			case PositionBefore:
+				err := st.placeBefore(block, op.At.BlockID, Inserted)
+				if err != nil {
+					return nil, err
+				}
+			case PositionAfter:
+				err := st.placeAfter(block, op.At.BlockID, Inserted)
+				if err != nil {
+					return nil, err
+				}
+			case PositionInside:
+				return nil, errors.New("invalid position inside for insert block")
+			}
+
+			st.change.addInserted(block)
+			st.change.addUpdated(parent)
+		case OpTypeMove:
+			block, ok := st.parking[op.BlockID]
+			if !ok {
+				return nil, errors.New("move block not found")
+			}
+			parentId := block.ParentID
+			if parentId == nil {
+				return nil, errors.New("old parent id is nil for move block")
+			}
+			parent, ok := st.block(*parentId)
+			if !ok {
+				return nil, errors.New("old parent block not found for move block")
+			}
+
+			// remove block from its current position
+			// to ensure that the block (subtree) is not in the tree
+			// the subtree nodes are still in the table but the connection is removed
+			st.remove(block)
+
+			switch op.At.Position {
+			case PositionStart:
+				st.paceAtStart(block, op.At.BlockID, Updated)
+			case PositionEnd:
+				st.paceAtEnd(block, op.At.BlockID, Updated)
+			case PositionBefore:
+				err := st.placeBefore(block, op.At.BlockID, Updated)
+				if err != nil {
+					return nil, err
+				}
+			case PositionAfter:
+				err := st.placeAfter(block, op.At.BlockID, Updated)
+				if err != nil {
+					return nil, err
+				}
+			case PositionInside:
+				return nil, errors.New("invalid position inside for move block")
+			}
+
+			st.change.addUpdated(block)
+			st.change.addUpdated(parent)
+
+			//case OpTypeUpdate:
+			//	if block, ok := blocks[op.BlockID]; ok {
+			//		block.Props = op.Props
+			//		stage.updateChange(block, Updated)
+			//	}
+			//case OpTypePatch:
+			//	if block, ok := blocks[op.BlockID]; ok {
+			//		block.Props = op.Props
+			//		stage.updateChange(block, PropSet)
+			//	}
+
+			//case OpTypeLink:
+			//	if block, ok := blocks[op.BlockID]; ok {
+			//		block.ParentID = op.ParentID
+			//		stage.updateChange(block, Updated)
+			//	}
+			//case OpTypeUnlink:
+			//	if block, ok := blocks[op.BlockID]; ok {
+			//		block.ParentID = op.ParentID
+			//		stage.updateChange(block, Updated)
+			//	}
+			//case OpTypeDelete:
+			//	if block, ok := blocks[op.BlockID]; ok {
+			//		block.Deleted = true
+			//		stage.updateChange(block, Updated)
+			//	}
+			//case OpTypeErase:
+			//	if block, ok := blocks[op.BlockID]; ok {
+			//		block.Erased = true
+			//		stage.updateChange(block, Updated)
+			//	}
+		}
 	}
 
-	// apply changes to the tree
-	//for _, block := range blocks {
-	//	if block.Deleted {
-	//		if tree, ok := stage.children[block.ParentID]; ok {
-	//			tree.Delete(block)
-	//		}
-	//	} else {
-	//		stage.add(block)
-	//	}
-	//}
-	//
-	//// update changes
-	//for _, block := range blocks {
-	//	if block.Deleted {
-	//		stage.updateChange(block, Updated)
-	//	}
-	//}
-
-	// update
-
-	return &stage.change, nil
+	return &st.change, nil
 }
 
-func (bt *StageTable) updateChange(block *Block, changeType BlockChangeType) {
+func (st *StageTable) paceAtStart(block *Block, parentID BlockID, action BlockChangeType) {
+	firstChild, ok := st.firstChild(parentID)
+	if ok {
+		block.Index = NewBefore(firstChild.Index)
+	} else {
+		block.Index = DefaultFracIndex()
+	}
+	st.updateChange(block, action)
+}
+
+func (st *StageTable) paceAtEnd(block *Block, parentID BlockID, action BlockChangeType) {
+	lastChild, ok := st.lastChild(parentID)
+	if ok {
+		block.Index = NewAfter(lastChild.Index)
+	} else {
+		block.Index = DefaultFracIndex()
+	}
+	st.updateChange(block, action)
+}
+
+func (st *StageTable) placeBefore(block *Block, nextID BlockID, action BlockChangeType) error {
+	sibling, err := st.withPrevSibling(nextID)
+	if err != nil {
+		return err
+	}
+	if len(sibling) == 0 {
+		return errors.New("reference block is not found for place before")
+	}
+
+	if len(sibling) == 1 {
+		block.Index = NewBefore(sibling[0].Index)
+		st.updateChange(block, action)
+	} else if len(sibling) == 2 {
+		block.Index, err = NewBetween(sibling[1].Index, sibling[0].Index)
+		if err != nil {
+			return err
+		}
+		st.updateChange(block, action)
+	} else {
+		return errors.New("invalid sibling count for place before")
+	}
+
+	return nil
+}
+
+func (st *StageTable) placeAfter(block *Block, prevID BlockID, opType BlockChangeType) error {
+	sibling, err := st.withNextSibling(prevID)
+	if err != nil {
+		return err
+	}
+	if len(sibling) == 0 {
+		return errors.New("reference block is not found for place after")
+	}
+
+	if len(sibling) == 1 {
+		block.Index = NewAfter(sibling[0].Index)
+		st.updateChange(block, opType)
+	} else if len(sibling) == 2 {
+		block.Index, err = NewBetween(sibling[0].Index, sibling[1].Index)
+		if err != nil {
+			return err
+		}
+		st.updateChange(block, opType)
+	} else {
+		return errors.New("invalid sibling count for place after")
+	}
+
+	return nil
+}
+
+func (st *StageTable) updateChange(block *Block, changeType BlockChangeType) {
 	switch changeType {
 	case Inserted:
-		bt.change.inserted.Add(block)
+		st.change.inserted.Add(block)
 	case Updated:
-		bt.change.updated.Add(block)
+		st.change.updated.Add(block)
 	case PropSet:
-		bt.change.propSet.Add(block)
+		st.change.propSet.Add(block)
 	}
 }
 
-func (bt *StageTable) firstChild(parent BlockID) (*Block, bool) {
-	if tree, ok := bt.children[parent]; ok {
+func (st *StageTable) firstChild(parent BlockID) (*Block, bool) {
+	if tree, ok := st.children[parent]; ok {
 		if tree.Len() > 0 {
 			var first *Block
 			tree.Ascend(func(b *Block) bool {
@@ -177,8 +290,8 @@ func (bt *StageTable) firstChild(parent BlockID) (*Block, bool) {
 	return nil, false
 }
 
-func (bt *StageTable) lastChild(parent BlockID) (*Block, bool) {
-	if tree, ok := bt.children[parent]; ok {
+func (st *StageTable) lastChild(parent BlockID) (*Block, bool) {
+	if tree, ok := st.children[parent]; ok {
 		if tree.Len() > 0 {
 			var last *Block
 			tree.Descend(func(b *Block) bool {
@@ -192,13 +305,13 @@ func (bt *StageTable) lastChild(parent BlockID) (*Block, bool) {
 }
 
 // withNextSibling returns [target, Optional[next]] for a block
-func (bt *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
+func (st *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
 	blocks := make([]*Block, 0, 2)
-	block, ok := bt.block(id)
+	block, ok := st.block(id)
 	if !ok {
 		return blocks, errors.New("block not found")
 	}
-	if tree, ok := bt.children[*block.ParentID]; ok {
+	if tree, ok := st.children[*block.ParentID]; ok {
 		if tree.Len() > 0 {
 			tree.AscendGreaterOrEqual(block, func(b *Block) bool {
 				blocks = append(blocks, b)
@@ -214,13 +327,13 @@ func (bt *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
 }
 
 // withPrevSibling returns [target, Optional[prev]] for a block
-func (bt *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
+func (st *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 	blocks := make([]*Block, 0, 2)
-	block, ok := bt.block(id)
+	block, ok := st.block(id)
 	if !ok {
 		return blocks, errors.New("block not found")
 	}
-	if tree, ok := bt.children[*block.ParentID]; ok {
+	if tree, ok := st.children[*block.ParentID]; ok {
 		if tree.Len() > 0 {
 			tree.DescendLessOrEqual(block, func(b *Block) bool {
 				blocks = append(blocks, b)
@@ -236,33 +349,43 @@ func (bt *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 }
 
 // Add adds a block to the table
-func (bt *StageTable) add(block *Block) {
-	bt.blocks[block.ID] = block
+func (st *StageTable) add(block *Block) {
+	st.blocks[block.ID] = block
 	if block.ParentID != nil {
-		if tree, ok := bt.children[*block.ParentID]; ok {
+		if tree, ok := st.children[*block.ParentID]; ok {
 			tree.ReplaceOrInsert(block)
 		} else {
-			bt.children[*block.ParentID] = btree.NewG(10, blockLessFunc)
-			bt.children[*block.ParentID].ReplaceOrInsert(block)
+			st.children[*block.ParentID] = btree.NewG(10, blockLessFunc)
+			st.children[*block.ParentID].ReplaceOrInsert(block)
 		}
 	}
 }
 
-func (bt *StageTable) block(id BlockID) (*Block, bool) {
-	if _, ok := bt.blocks[id]; !ok {
+// Remove removes a block from the table
+func (st *StageTable) remove(block *Block) {
+	delete(st.blocks, block.ID)
+	if block.ParentID != nil {
+		if tree, ok := st.children[*block.ParentID]; ok {
+			tree.Delete(block)
+		}
+	}
+}
+
+func (st *StageTable) block(id BlockID) (*Block, bool) {
+	if _, ok := st.blocks[id]; !ok {
 		return nil, false
 	}
-	return bt.blocks[id], true
+	return st.blocks[id], true
 }
 
 // Park a block in the table
-func (bt *StageTable) park(block *Block) {
-	bt.parking[block.ID] = block
+func (st *StageTable) park(block *Block) {
+	st.parking[block.ID] = block
 }
 
 // Unpark a block in the table
-func (bt *StageTable) parked(id BlockID) (*Block, bool) {
-	block, ok := bt.parking[id]
+func (st *StageTable) parked(id BlockID) (*Block, bool) {
+	block, ok := st.parking[id]
 	if !ok {
 		return nil, false
 	}
@@ -270,16 +393,16 @@ func (bt *StageTable) parked(id BlockID) (*Block, bool) {
 	return block, true
 }
 
-func (bt *StageTable) unpark(id BlockID) {
-	delete(bt.parking, id)
+func (st *StageTable) unpark(id BlockID) {
+	delete(st.parking, id)
 }
 
-func (bt *StageTable) contains(id BlockID) bool {
-	_, ok := bt.blocks[id]
+func (st *StageTable) contains(id BlockID) bool {
+	_, ok := st.blocks[id]
 	if ok {
 		return true
 	}
-	_, ok = bt.parking[id]
+	_, ok = st.parking[id]
 	if ok {
 		return true
 	}
