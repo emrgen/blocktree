@@ -14,6 +14,13 @@ type Space struct {
 	Name string
 }
 
+func NewSpace(spaceID SpaceID, name string) *Space {
+	return &Space{
+		ID:   spaceID,
+		Name: name,
+	}
+}
+
 type BlockProps = map[string]interface{}
 
 type BlockView struct {

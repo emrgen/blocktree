@@ -107,6 +107,10 @@ func (ms *MemStore) GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block,
 func (ms *MemStore) getDescendantBlocks(space *spaceStore, id BlockID, blocks *[]*Block) {
 	if block, ok := space.blocks[id]; ok && block != nil {
 		*blocks = append(*blocks, block.Clone())
+		// stop at page block, no need to go further
+		if block.Type == "page" {
+			return
+		}
 	} else {
 		return
 	}
