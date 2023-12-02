@@ -78,3 +78,16 @@ func (s Set[T]) ForEach(cb func(T) bool) {
 		}
 	}
 }
+
+func (s Set[T]) Equals(other *Set[T]) bool {
+	if s.Cardinality() != other.Cardinality() {
+		return false
+	}
+
+	for k := range s.items {
+		if !other.Contains(k) {
+			return false
+		}
+	}
+	return true
+}

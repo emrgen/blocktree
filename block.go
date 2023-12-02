@@ -4,6 +4,10 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	RootBlockID = uuid.MustParse("00000000-0000-0000-0000-000000000000")
+)
+
 type BlockID = uuid.UUID
 type ParentID = uuid.UUID
 type ChildID = uuid.UUID
@@ -26,7 +30,7 @@ type BlockProps = map[string]interface{}
 type BlockView struct {
 	Type     string
 	ID       uuid.UUID
-	ParentID *uuid.UUID
+	ParentID uuid.UUID
 	Props    BlockProps
 	Children []*BlockView
 	Deleted  bool
@@ -36,14 +40,14 @@ type BlockView struct {
 type Block struct {
 	Type     string
 	ID       BlockID
-	ParentID *ParentID
+	ParentID ParentID
 	Index    *FracIndex
 	Props    BlockProps
 	Deleted  bool
 	Erased   bool
 }
 
-func NewBlock(blockID BlockID, parentID *ParentID, blockType string) *Block {
+func NewBlock(blockID BlockID, parentID ParentID, blockType string) *Block {
 	return &Block{
 		Type:     blockType,
 		ID:       blockID,

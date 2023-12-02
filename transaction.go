@@ -79,7 +79,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			case op.At.Position == PositionAfter || op.At.Position == PositionBefore:
 				refBlock, ok := stage.parked(op.At.BlockID)
 				if ok {
-					block, err := op.IntoBlock(*refBlock.ParentID)
+					block, err := op.IntoBlock(refBlock.ParentID)
 					if err != nil {
 						return nil, err
 					}
@@ -146,14 +146,14 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			parked, ok := stage.parked(op.BlockID)
 			var parent *Block
 			if ok {
-				if parked.ParentID == nil {
+				if parked.ParentID == uuid.Nil {
 					return nil, fmt.Errorf("newly inserted block has no parent id set: %v", op)
 				}
-				parkedParent, ok := stage.parked(*parked.ParentID)
+				parkedParent, ok := stage.parked(parked.ParentID)
 				if ok {
 					parent = parkedParent
 				} else {
-					parent, err = store.GetBlock(&tx.SpaceID, *parked.ParentID)
+					parent, err = store.GetBlock(&tx.SpaceID, parked.ParentID)
 					if err != nil {
 						return nil, err
 					}
@@ -190,7 +190,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 					continue
 				}
 
-				block := NewBlock(op.BlockID, &parent.ID, "")
+				block := NewBlock(op.BlockID, parent.ID, "")
 				stage.add(block)
 			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
 				logrus.Infof("load parent block %v", op.At.BlockID)
@@ -211,7 +211,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 					continue
 				}
 
-				block := NewBlock(op.BlockID, &parent.ID, "")
+				block := NewBlock(op.BlockID, parent.ID, "")
 				stage.add(block)
 			case op.At.Position == PositionInside:
 				return nil, fmt.Errorf("cannot move inside a block: %v", op)
@@ -472,7 +472,7 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 	}
 
 	return &Block{
-		ParentID: &parentID,
+		ParentID: parentID,
 		Type:     blockType,
 		ID:       op.BlockID,
 		Index:    DefaultFracIndex(),

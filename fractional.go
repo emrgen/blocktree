@@ -21,7 +21,7 @@ func DefaultFracIndex() *FracIndex {
 	return &FracIndex{bytes: []byte{terminator}}
 }
 
-func fromBytes(bytes []byte) *FracIndex {
+func FracIndexFromBytes(bytes []byte) *FracIndex {
 	return &FracIndex{bytes: bytes}
 }
 
@@ -95,6 +95,10 @@ func NewAfter(prev *FracIndex) *FracIndex {
 	return fromUnterminated(newAfter(prev.bytes))
 }
 
+func (f *FracIndex) Bytes() []byte {
+	return f.bytes
+}
+
 func (f *FracIndex) Compare(other *FracIndex) int {
 	for i := 0; i < len(f.bytes) && i < len(other.bytes); i++ {
 		if f.bytes[i] < other.bytes[i] {
@@ -121,7 +125,7 @@ func (f *FracIndex) Equals(other *FracIndex) bool {
 }
 
 func (f *FracIndex) Clone() *FracIndex {
-	return fromBytes(bytes.Clone(f.bytes))
+	return FracIndexFromBytes(bytes.Clone(f.bytes))
 }
 
 func (f *FracIndex) String() string {

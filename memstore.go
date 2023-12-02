@@ -31,16 +31,13 @@ func newSpaceStore() *spaceStore {
 
 func (ss *spaceStore) AddBlock(block *Block) {
 	ss.blocks[block.ID] = block.Clone()
-	if block.ParentID != nil {
-		ss.parents[block.ID] = *block.ParentID
-		children, ok := ss.children[*block.ParentID]
-		if !ok {
-			children = btree.NewG(10, blockLessFunc)
-			ss.children[*block.ParentID] = children
-		}
-		children.ReplaceOrInsert(block)
-
+	ss.parents[block.ID] = block.ParentID
+	children, ok := ss.children[block.ParentID]
+	if !ok {
+		children = btree.NewG(10, blockLessFunc)
+		ss.children[block.ParentID] = children
 	}
+	children.ReplaceOrInsert(block)
 
 	if block.Props != nil {
 		ss.props[block.ID] = block.Props
@@ -54,16 +51,14 @@ func (ss *spaceStore) RemoveBlock(id BlockID) {
 	}
 
 	//logrus.Info("removing block from store", block.ParentID)
-	if block.ParentID != nil {
-		delete(ss.parents, id)
-		children, ok := ss.children[*block.ParentID]
-		if !ok {
-			return
-		}
-
-		//logrus.Infof("removing block %v from parent %v", id, *block.ParentID)
-		children.Delete(block)
+	delete(ss.parents, id)
+	children, ok := ss.children[block.ParentID]
+	if !ok {
+		return
 	}
+
+	//logrus.Infof("removing block %v from parent %v", id, *block.ParentID)
+	children.Delete(block)
 
 	delete(ss.blocks, id)
 }
@@ -214,7 +209,7 @@ func (ms *MemStore) CreateSpace(space *Space) error {
 	}
 
 	ms.spaces[space.ID] = newSpaceStore()
-	spaceBlock := NewBlock(space.ID, nil, "space")
+	spaceBlock := NewBlock(space.ID, RootBlockID, "space")
 	err := ms.CreateBlock(&space.ID, spaceBlock)
 	if err != nil {
 		return err

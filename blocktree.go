@@ -5,6 +5,7 @@ import (
 	"fmt"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/btree"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/xlab/treeprint"
 )
@@ -95,7 +96,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			}
 
 			parentId := block.ParentID
-			if parentId == nil {
+			if parentId == uuid.Nil {
 				return nil, errors.New("parent id is nil for insert block")
 			}
 			parent, ok := st.block(op.At.BlockID)
@@ -131,10 +132,10 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 				return nil, errors.New(fmt.Sprintf("move block not found: %v", op.BlockID))
 			}
 			parentId := block.ParentID
-			if parentId == nil {
+			if parentId == uuid.Nil {
 				return nil, errors.New(fmt.Sprintf("old parent id is nil for move block: %v", op.BlockID))
 			}
-			parent, ok := st.block(*parentId)
+			parent, ok := st.block(parentId)
 			//logrus.Infof("existing blocks: %v", st.existingIDs())
 			if !ok {
 				return nil, errors.New("old parent block not found for move block")
@@ -220,7 +221,7 @@ func (st *StageTable) paceAtStart(block *Block, parentID BlockID, action BlockCh
 	} else {
 		block.Index = DefaultFracIndex()
 	}
-	block.ParentID = &parentID
+	block.ParentID = parentID
 	st.updateChange(block, action)
 }
 
@@ -231,7 +232,7 @@ func (st *StageTable) paceAtEnd(block *Block, parentID BlockID, action BlockChan
 	} else {
 		block.Index = DefaultFracIndex()
 	}
-	block.ParentID = &parentID
+	block.ParentID = parentID
 	st.updateChange(block, action)
 }
 
@@ -335,7 +336,7 @@ func (st *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
 	if !ok {
 		return blocks, errors.New("block not found")
 	}
-	if tree, ok := st.children[*block.ParentID]; ok {
+	if tree, ok := st.children[block.ParentID]; ok {
 		if tree.Len() > 0 {
 			tree.AscendGreaterOrEqual(block, func(b *Block) bool {
 				blocks = append(blocks, b)
@@ -357,7 +358,7 @@ func (st *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 	if !ok {
 		return blocks, errors.New("block not found")
 	}
-	if tree, ok := st.children[*block.ParentID]; ok {
+	if tree, ok := st.children[block.ParentID]; ok {
 		if tree.Len() > 0 {
 			tree.DescendLessOrEqual(block, func(b *Block) bool {
 				blocks = append(blocks, b)
@@ -375,23 +376,19 @@ func (st *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 // Add adds a block to the table
 func (st *StageTable) add(block *Block) {
 	st.blocks[block.ID] = block
-	if block.ParentID != nil {
-		if tree, ok := st.children[*block.ParentID]; ok {
-			tree.ReplaceOrInsert(block)
-		} else {
-			st.children[*block.ParentID] = btree.NewG(10, blockLessFunc)
-			st.children[*block.ParentID].ReplaceOrInsert(block)
-		}
+	if tree, ok := st.children[block.ParentID]; ok {
+		tree.ReplaceOrInsert(block)
+	} else {
+		st.children[block.ParentID] = btree.NewG(10, blockLessFunc)
+		st.children[block.ParentID].ReplaceOrInsert(block)
 	}
 }
 
 // Remove removes a block from the table
 func (st *StageTable) remove(block *Block) {
 	delete(st.blocks, block.ID)
-	if block.ParentID != nil {
-		if tree, ok := st.children[*block.ParentID]; ok {
-			tree.Delete(block)
-		}
+	if tree, ok := st.children[block.ParentID]; ok {
+		tree.Delete(block)
 	}
 }
 
