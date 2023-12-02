@@ -16,6 +16,8 @@ type BlockStore interface {
 	CreateSpace(space *Space) error
 	CreateBlock(spaceID *SpaceID, block *Block) error
 	GetBlock(spaceID *SpaceID, id BlockID) (*Block, error)
+	GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	GetParentBlock(spaceID *SpaceID, id BlockID) (*Block, error)
 	GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error)
 	GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
@@ -27,6 +29,7 @@ type BlockStore interface {
 
 type TransactionStore interface {
 	GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error)
+	PutTransactions(spaceID *SpaceID, tx []*Transaction) error
 }
 
 type JsonDocStore interface {
@@ -36,5 +39,7 @@ type Store interface {
 	BlockStore
 	TransactionStore
 	JsonDocStore
+
+	// ApplyChange apply changes to db in one transaction
 	ApplyChange(space *SpaceID, change *StoreChange) error
 }

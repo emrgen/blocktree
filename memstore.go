@@ -17,7 +17,7 @@ type spaceStore struct {
 	blocks   map[BlockID]*Block
 	parents  map[BlockID]ParentID
 	props    map[BlockID]map[string]interface{}
-	txs      map[TransactionID]*Transaction
+	tx       *Transaction
 }
 
 func newSpaceStore() *spaceStore {
@@ -53,7 +53,7 @@ func (ss *spaceStore) RemoveBlock(id BlockID) {
 		return
 	}
 
-	logrus.Info("removing block from store", block.ParentID)
+	//logrus.Info("removing block from store", block.ParentID)
 	if block.ParentID != nil {
 		delete(ss.parents, id)
 		children, ok := ss.children[*block.ParentID]
@@ -61,7 +61,7 @@ func (ss *spaceStore) RemoveBlock(id BlockID) {
 			return
 		}
 
-		logrus.Infof("removing block %v from parent %v", id, *block.ParentID)
+		//logrus.Infof("removing block %v from parent %v", id, *block.ParentID)
 		children.Delete(block)
 	}
 
@@ -70,6 +70,56 @@ func (ss *spaceStore) RemoveBlock(id BlockID) {
 
 type MemStore struct {
 	spaces map[SpaceID]*spaceStore
+}
+
+func (ms *MemStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	space, err := ms.getSpace(spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*Block, 0)
+	children, ok := space.children[id]
+	if !ok {
+		return blocks, nil
+	}
+
+	children.Ascend(func(item *Block) bool {
+		blocks = append(blocks, item.Clone())
+		return true
+	})
+
+	return blocks, nil
+}
+
+func (ms *MemStore) GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	space, err := ms.getSpace(spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*Block, 0)
+	ms.getDescendantBlocks(space, id, &blocks)
+
+	return blocks, nil
+}
+
+func (ms *MemStore) getDescendantBlocks(space *spaceStore, id BlockID, blocks *[]*Block) {
+	if block, ok := space.blocks[id]; ok && block != nil {
+		*blocks = append(*blocks, block.Clone())
+	} else {
+		return
+	}
+
+	children, ok := space.children[id]
+	if !ok {
+		return
+	}
+
+	children.Ascend(func(item *Block) bool {
+		ms.getDescendantBlocks(space, item.ID, blocks)
+		return true
+	})
 }
 
 func (ms *MemStore) GetParentBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
@@ -198,7 +248,7 @@ func (ms *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
 		}
 
 		for _, block := range blockChange.moved.ToSlice() {
-			logrus.Infof("updating block %v", block)
+			//logrus.Infof("updating block %v", block)
 			storeBlock, ok := space.blocks[block.ID]
 			if !ok {
 				return errors.New(fmt.Sprintf("move block not found, %v", block.ID))
@@ -291,18 +341,30 @@ func (ms *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEd
 	return edges, nil
 }
 
+func (ms *MemStore) getSpace(spaceID *SpaceID) (*spaceStore, error) {
+	space, ok := ms.spaces[*spaceID]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("space not found: %v", *spaceID))
+	}
+	return space, nil
+}
+
 func (ms *MemStore) GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error) {
 	return nil, nil
 }
 
-func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
+func (ms *MemStore) PutTransactions(spaceID *SpaceID, txs []*Transaction) error {
 	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		space = newSpaceStore()
 		ms.spaces[*spaceID] = space
 	}
 
-	space.txs[tx.ID] = tx
+	if len(txs) == 0 {
+		return errors.New("transactions are empty")
+	}
+
+	space.tx = txs[len(txs)-1]
 	return nil
 }
 

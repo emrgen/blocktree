@@ -55,7 +55,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 		return nil, fmt.Errorf("cannot find all referenced blocks")
 	}
 	stage := NewStageTable()
-	logrus.Infof("relevant blocks: %v", existingBlockIDs.ToSlice())
+	//logrus.Infof("relevant blocks: %v", existingBlockIDs.ToSlice())
 	for _, block := range relevantBlocks {
 		stage.add(block)
 	}

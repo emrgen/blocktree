@@ -22,11 +22,17 @@ type JsonDocPatchOp struct {
 }
 
 // NewJsonDoc creates a new JsonDoc.
+// json docs lives in separate table
+// the content structure is kept in blocks table
 func NewJsonDoc(id uuid.UUID) *JsonDoc {
 	return &JsonDoc{
 		ID:      id,
 		Content: make(map[string]interface{}),
 	}
+}
+
+func (j *JsonDoc) ApplyPatch(patch *JsonDocPatch) {
+
 }
 
 func (j *JsonDoc) Patch(patch JsonDocPatch) error {

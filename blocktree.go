@@ -90,7 +90,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			// NOTE: space insertion is a special case
 			// not need to update index
 			if block.Type == "space" {
-				st.change.addInserted(block)
+				logrus.Warnf("space insertion is a special case not done throught transaction")
 				continue
 			}
 
@@ -135,7 +135,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 				return nil, errors.New(fmt.Sprintf("old parent id is nil for move block: %v", op.BlockID))
 			}
 			parent, ok := st.block(*parentId)
-			logrus.Infof("existing blocks: %v", st.existingIDs())
+			//logrus.Infof("existing blocks: %v", st.existingIDs())
 			if !ok {
 				return nil, errors.New("old parent block not found for move block")
 			}
