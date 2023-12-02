@@ -149,3 +149,49 @@ func TestMoveOp(t *testing.T) {
 
 	store.Print(&s1)
 }
+
+func TestMoveOpWithSimpleCycle(t *testing.T) {
+	var err error
+	store := NewMemStore()
+	err = prepareSpace(store, s1)
+	assert.NoError(t, err)
+
+	tx := &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			moveOp(b1, b2, PositionStart),
+			moveOp(b2, b1, PositionStart),
+		},
+	}
+
+	_, err = store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+
+	_, err = tx.Prepare(store)
+	assert.EqualError(t, err, ErrDetectedCycle.Error())
+}
+
+func TestMoveOpWithComplexCycle(t *testing.T) {
+	var err error
+	store := NewMemStore()
+	err = prepareSpace(store, s1)
+	assert.NoError(t, err)
+
+	tx := &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			moveOp(b1, b2, PositionStart),
+			moveOp(b2, b3, PositionStart),
+			moveOp(b3, b4, PositionStart),
+			moveOp(b4, b1, PositionStart),
+		},
+	}
+
+	_, err = store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+
+	_, err = tx.Prepare(store)
+	assert.EqualError(t, err, ErrDetectedCycle.Error())
+}
