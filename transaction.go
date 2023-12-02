@@ -18,7 +18,7 @@ type TransactionID = uuid.UUID
 
 // Transaction is a collection of Ops that are applied to a Space.
 type Transaction struct {
-	ID        TransactionID `json:"id"`
+	ID        TransactionID
 	SpaceID   SpaceID
 	UserID    uuid.UUID
 	Time      time.Time

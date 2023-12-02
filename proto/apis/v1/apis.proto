@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package apis.v1;
+
+option go_package = "github.com/emrgen/blocktree/proto/v1";
+
+import "google/api/annotations.proto";
+import "google/api/httpbody.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "google/protobuf/timestamp.proto";
+import "validate/validate.proto";
+
+enum OpType {
+  OP_TYPE_INSERT = 0;
+  OP_TYPE_MOVE = 1;
+  OP_TYPE_UPDATE = 2;
+  OP_TYPE_DELETE = 3;
+  OP_TYPE_ERASE = 4;
+}
+
+enum PointerPosition {
+  POINTER_POSITION_BEFORE = 0;
+  POINTER_POSITION_AFTER = 1;
+  POINTER_POSITION_START = 3;
+  POINTER_POSITION_END = 4;
+}
+
+message Pointer {
+  string block_id = 1;
+  string position = 2;
+}
+
+message Op {
+  string table = 1;
+  OpType type = 2;
+  string block_id = 3;
+  Pointer at = 4;
+  string props = 5;
+  string patch = 6;
+}
+
+message Transaction {
+  string id = 1;
+  string space_id = 2;
+  string user_id = 3;
+  repeated Op ops = 4;
+  google.protobuf.Timestamp time = 5;
+}
