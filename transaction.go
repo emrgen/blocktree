@@ -18,21 +18,21 @@ type TransactionID = uuid.UUID
 
 // Transaction is a collection of Ops that are applied to a Space.
 type Transaction struct {
-	ID        TransactionID
-	SpaceID   SpaceID
-	UserID    uuid.UUID
-	Time      time.Time
-	TxCounter int64
-	Ops       []Op
+	ID      TransactionID
+	SpaceID SpaceID
+	UserID  uuid.UUID
+	Time    time.Time
+	Counter uint64
+	Ops     []Op
 }
 
 func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 	// check if transaction is not already applied
-	transaction, err := store.GetTransaction(&tx.SpaceID, &tx.ID)
+	transaction, err := store.GetLatestTransaction(&tx.SpaceID)
 	if err != nil {
 		return nil, err
 	}
-	if transaction != nil {
+	if transaction != nil && transaction.Counter >= tx.Counter {
 		return nil, fmt.Errorf("transaction already applied")
 	}
 
@@ -476,16 +476,21 @@ type Pointer struct {
 	Position PointerPosition `json:"position"`
 }
 
+type OpProp struct {
+	Path  []string
+	Value interface{}
+}
+
 // Op is an operation that is applied to a blocktree.
 type Op struct {
-	Table   string                 `json:"table"`
-	Type    OpType                 `json:"type"`
-	Object  string                 `json:"object"`
-	Linked  bool                   `json:"linked"`
-	BlockID BlockID                `json:"block_id"`
-	At      *Pointer               `json:"at"`
-	Props   map[string]interface{} `json:"props"`
-	Patch   *JsonDocPatch          `json:"patch"`
+	Table   string   `json:"table"`
+	Type    OpType   `json:"type"`
+	Object  string   `json:"object"`
+	Linked  bool     `json:"linked"`
+	BlockID BlockID  `json:"block_id"`
+	At      *Pointer `json:"at"`
+	Props   []OpProp `json:"props"`
+	Patch   []byte   `json:"patch"`
 }
 
 func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
@@ -498,12 +503,16 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 		return nil, fmt.Errorf("insert op is missing block object type")
 	}
 
+	if op.Table == "" {
+		return nil, fmt.Errorf("insert op is missing table")
+	}
+
 	return &Block{
 		ParentID: parentID,
 		Type:     op.Object,
+		Table:    op.Table,
 		ID:       op.BlockID,
 		Index:    DefaultFracIndex(),
-		Props:    op.Props,
 		Deleted:  false,
 		Erased:   false,
 		Linked:   op.Linked,

@@ -70,6 +70,16 @@ type GormStore struct {
 	db *gorm.DB
 }
 
+func (g GormStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (g GormStore) Apply(space *SpaceID, change *StoreChange) error {
+	//TODO implement me
+	panic("implement me")
+}
+
 func NewGormStore(db *gorm.DB) *GormStore {
 	return &GormStore{db: db}
 }

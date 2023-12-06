@@ -96,7 +96,7 @@ func TestInsertOp(t *testing.T) {
 	})
 
 	// apply the change to the store
-	err = store.ApplyChange(&s1, changes)
+	err = store.Apply(&s1, changes)
 	assert.NoError(t, err)
 
 	block, err := store.GetBlock(&s1, b1)
@@ -163,7 +163,7 @@ func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
 	}
 
 	changes, _ := tx.Prepare(store)
-	err = store.ApplyChange(&s1, changes)
+	err = store.Apply(&s1, changes)
 	return err
 }
 
@@ -175,7 +175,7 @@ func applyTransaction(t *testing.T, store *MemStore, tx *Transaction) {
 		return changes != nil
 	})
 
-	err = store.ApplyChange(&s1, changes)
+	err = store.Apply(&s1, changes)
 	assert.NoError(t, err)
 }
 
@@ -278,7 +278,7 @@ func TestBlockLink(t *testing.T) {
 
 	change, err := tx.Prepare(store)
 
-	err = store.ApplyChange(&s1, change)
+	err = store.Apply(&s1, change)
 	assert.NoError(t, err)
 
 	space, err := store.getSpace(&s1)

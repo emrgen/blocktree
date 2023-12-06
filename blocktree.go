@@ -10,11 +10,6 @@ import (
 	"github.com/xlab/treeprint"
 )
 
-type BBlockID interface {
-	String() string
-	Equals(other BBlockID) bool
-}
-
 // BlockTree is a staging ground for loading block from db
 type BlockTree struct {
 	Root     *Block
@@ -178,14 +173,17 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			if !ok {
 				return nil, errors.New("update block not found")
 			}
-			block.Props = op.Props
+			block.mergeProps(op.Props)
 			st.change.addPropSet(block)
 		case OpTypePatch:
 			block, ok := st.block(op.BlockID)
 			if !ok {
 				return nil, errors.New("patch block not found")
 			}
-			block.Props = op.Props
+			err := block.mergeJson(op.Patch)
+			if err != nil {
+				return nil, err
+			}
 			st.change.addPropSet(block)
 
 		//case OpTypeLink:

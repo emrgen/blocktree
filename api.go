@@ -14,12 +14,12 @@ type Api struct {
 	store Store
 }
 
-func (s *Api) CreateTransaction(ctx context.Context, transaction *v1.Transaction) (*v1.Transaction, error) {
+func (a Api) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactionRequest) (*v1.ApplyTransactionResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (s *Api) CreateSpace(ctx context.Context, request *v1.CreateSpaceRequest) (*v1.CreateSpaceResponse, error) {
+func (a Api) CreateSpace(ctx context.Context, req *v1.CreateSpaceRequest) (*v1.CreateSpaceResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }

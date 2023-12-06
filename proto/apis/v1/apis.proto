@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package apis.v1;
 
-option go_package = "github.com/emrgen/blocktree/proto/v1";
-
 import "google/api/annotations.proto";
 import "google/api/httpbody.proto";
-import "protoc-gen-openapiv2/options/annotations.proto";
 import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
 import "validate/validate.proto";
+
+option go_package = "github.com/emrgen/blocktree/proto/v1";
 
 enum OpType {
   OP_TYPE_UNKNOWN = 0;
@@ -33,6 +33,11 @@ message Pointer {
   PointerPosition position = 2;
 }
 
+message OpProp {
+  repeated string path = 1;
+  string value = 2;
+}
+
 message Op {
   string table = 1;
   OpType type = 2;
@@ -40,7 +45,7 @@ message Op {
   Pointer at = 4;
   optional string object = 5;
   optional bool linked = 6;
-  optional string props = 7;
+  repeated OpProp props = 7;
   optional string patch = 8;
 }
 
@@ -54,15 +59,30 @@ message CreateSpaceResponse {
 }
 
 message Transaction {
-  string id = 1 [(validate.rules).string = {uuid: true}];
+  string transaction_id = 1 [(validate.rules).string = {uuid: true}];
   string space_id = 2 [(validate.rules).string = {uuid: true}];
   string user_id = 3 [(validate.rules).string = {uuid: true}];
   repeated Op ops = 4;
   google.protobuf.Timestamp time = 5;
 }
 
+message ApplyTransactionRequest {
+  repeated Transaction transactions = 1;
+}
+
+message ApplyTransactionResult {
+  string transaction_id = 1 [(validate.rules).string = {uuid: true}];
+  string space_id = 2 [(validate.rules).string = {uuid: true}];
+  bool success = 3;
+  string message = 4;
+}
+
+message ApplyTransactionResponse {
+  repeated ApplyTransactionResult transactions = 1;
+}
+
 service Blocktree {
-  rpc CreateTransaction(Transaction) returns (Transaction) {
+  rpc ApplyTransactions(ApplyTransactionRequest) returns (ApplyTransactionResponse) {
     option (google.api.http) = {
       post: "/v1/transactions"
       body: "*"

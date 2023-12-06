@@ -28,7 +28,8 @@ type BlockStore interface {
 }
 
 type TransactionStore interface {
-	GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error)
+	GetLatestTransaction(spaceID *SpaceID) (*Transaction, error)
+	//GetTransactions(spaceID *SpaceID, id *TransactionID) (*Transaction, error)
 	PutTransactions(spaceID *SpaceID, tx []*Transaction) error
 }
 
@@ -40,6 +41,6 @@ type Store interface {
 	TransactionStore
 	JsonDocStore
 
-	// ApplyChange apply changes to db in one transaction
-	ApplyChange(space *SpaceID, change *StoreChange) error
+	// Apply applies store change to db in one transaction
+	Apply(space *SpaceID, change *StoreChange) error
 }

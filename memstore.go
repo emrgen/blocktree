@@ -67,6 +67,15 @@ type MemStore struct {
 	spaces map[SpaceID]*spaceStore
 }
 
+func (ms *MemStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) {
+	space, ok := ms.spaces[*spaceID]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
+	}
+
+	return space.tx, nil
+}
+
 func (ms *MemStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	space, err := ms.getSpace(spaceID)
 	if err != nil {
@@ -282,7 +291,7 @@ func NewMemStore() *MemStore {
 	}
 }
 
-func (ms *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
+func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
 	if change == nil {
 		return errors.New("cannot apply nil change to store")
 	}

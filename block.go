@@ -2,6 +2,7 @@ package blocktree
 
 import (
 	"errors"
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/btree"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -137,14 +138,17 @@ func (b *BlockView) Print() {
 }
 
 type Block struct {
-	Type     string
-	ID       BlockID
-	ParentID ParentID
-	Index    *FracIndex
-	Props    BlockProps
-	Deleted  bool
-	Erased   bool
-	Linked   bool // linked blocks
+	Type        string
+	Table       string
+	ID          BlockID
+	ParentID    ParentID
+	Index       *FracIndex
+	Props       BlockProps
+	Json        []byte
+	Deleted     bool
+	Erased      bool
+	Linked      bool // linked blocks
+	UpdateFlags uint32
 }
 
 func NewBlock(blockID BlockID, parentID ParentID, blockType string) *Block {
@@ -154,6 +158,39 @@ func NewBlock(blockID BlockID, parentID ParentID, blockType string) *Block {
 		ParentID: parentID,
 		Index:    DefaultFracIndex(),
 	}
+}
+
+func (b *Block) mergeProps(props []OpProp) {
+	var merge func(map[string]interface{}, []string, interface{}) interface{}
+	merge = func(props map[string]interface{}, keys []string, value interface{}) interface{} {
+		if len(keys) == 0 {
+			return value
+		}
+
+		if props == nil {
+			props = make(map[string]interface{})
+		}
+
+		if _, ok := props[keys[0]]; !ok {
+			props[keys[0]] = make(map[string]interface{})
+		}
+
+		merge(props[keys[0]].(map[string]interface{}), keys[1:], value)
+		return props
+	}
+
+	for _, prop := range props {
+		merge(b.Props, prop.Path, prop.Value)
+	}
+}
+
+func (b *Block) mergeJson(patch []byte) error {
+	content, err := jsonpatch.MergePatch(b.Json, patch)
+	if err != nil {
+		return err
+	}
+	b.Json = content
+	return nil
 }
 
 func (b *Block) Clone() *Block {
