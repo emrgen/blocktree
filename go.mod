@@ -14,7 +14,6 @@ require (
 	github.com/xlab/treeprint v1.2.0
 	google.golang.org/genproto/googleapis/api v0.0.0-20231127180814-3a041ad873d4
 	google.golang.org/protobuf v1.31.0
-	gorm.io/driver/sqlite v1.5.4
 	gorm.io/gorm v1.25.2-0.20230530020048-26663ab9bf55
 )
 
@@ -24,7 +23,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect

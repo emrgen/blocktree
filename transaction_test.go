@@ -220,6 +220,8 @@ func TestBlockLink(t *testing.T) {
 		Ops: []Op{
 			linkOp(b6, "l1", b2),
 			linkOp(b7, "l2", b2),
+			insertOp(b8, "p2", b2, PositionEnd),
+			insertOp(b9, "p2", b6, PositionEnd),
 		},
 	}
 
@@ -231,7 +233,16 @@ func TestBlockLink(t *testing.T) {
 	space, err := store.getSpace(&s1)
 	assert.NoError(t, err)
 
-	assert.Equal(t, 2, space.children[b2].Len(), "b2 should have 2 linked blocks")
+	assert.Equal(t, 3, space.children[b2].Len(), "b2 should have total 3 linked+child blocks")
 
-	//store.Print(&s1)
+	blocks, err := store.GetChildrenBlocks(&s1, b2)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(blocks), "b2 should have 1 children block")
+
+	descendants, err := store.GetDescendantBlocks(&s1, s1)
+	assert.NoError(t, err)
+	v1, err := BlockViewFromBlocks(s1, descendants)
+	assert.NoError(t, err)
+
+	v1.Print()
 }

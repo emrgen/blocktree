@@ -4,6 +4,8 @@ import (
 	"errors"
 	"github.com/google/btree"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
+	"github.com/xlab/treeprint"
 )
 
 var (
@@ -63,13 +65,14 @@ func BlockViewFromBlocks(rootID BlockID, blocks []*Block) (*BlockView, error) {
 
 		if block.Linked {
 			if _, ok := linked[block.ParentID]; !ok {
-				linked[block.ID] = NewSet[*Block]()
+				linked[block.ParentID] = NewSet[*Block]()
 			}
 			linked[block.ParentID].Add(block)
 		} else {
 			if _, ok := children[block.ParentID]; !ok {
-				children[block.ID] = btree.NewG(10, blockLessFunc)
+				children[block.ParentID] = btree.NewG(10, blockLessFunc)
 			}
+			logrus.Infof("inserting block %v to parent %v", block.ID, block.ParentID)
 			children[block.ParentID].ReplaceOrInsert(block)
 		}
 	}
@@ -105,6 +108,32 @@ func BlockViewFromBlocks(rootID BlockID, blocks []*Block) (*BlockView, error) {
 	build(root)
 
 	return root, nil
+}
+
+func (b *BlockView) Print() {
+	var build func(treeprint.Tree, *BlockView)
+	build = func(tree treeprint.Tree, block *BlockView) {
+		v := tree.AddNode(block.ID.String())
+
+		if len(block.Children) > 0 {
+			children := v.AddBranch("children")
+			for _, child := range block.Children {
+				build(children, child)
+			}
+		}
+
+		if len(block.Linked) > 0 {
+			linked := v.AddBranch("linked")
+			for _, child := range block.Linked {
+				build(linked, child)
+			}
+		}
+	}
+
+	tree := treeprint.New()
+	build(tree, b)
+
+	logrus.Infof("tree: %v", tree.String())
 }
 
 type Block struct {

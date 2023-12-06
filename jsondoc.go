@@ -8,6 +8,7 @@ type JsonDocID = uuid.UUID
 type JsonDoc struct {
 	ID      JsonDocID              `json:"id"`
 	Content map[string]interface{} `json:"content"`
+	Props   map[string]interface{} `json:"props"`
 }
 
 type JsonDocPatch struct {

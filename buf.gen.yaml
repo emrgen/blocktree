@@ -12,3 +12,5 @@ plugins:
   - name: validate
     out: .
     opt: lang=go,paths=source_relative
+  - name: openapiv2
+    out: .
