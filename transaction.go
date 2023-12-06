@@ -69,10 +69,8 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			}
 
 			//check if block has type prop
-			if typ, ok := op.Props["type"]; !ok {
+			if op.Object == "" {
 				return nil, fmt.Errorf("invalid create op without type: %v", op)
-			} else if _, ok := typ.(string); !ok {
-				return nil, fmt.Errorf("invalid create op with non-string type: %v", op)
 			}
 
 			switch {
@@ -411,6 +409,12 @@ func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error)
 				return nil, err
 			}
 			relevantBlocks = append(relevantBlocks, blocks...)
+		case op.At.Position == PositionInside:
+			block, err := store.GetParentBlock(&tx.SpaceID, op.At.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			relevantBlocks = append(relevantBlocks, block)
 		}
 	}
 
@@ -454,6 +458,8 @@ type Pointer struct {
 type Op struct {
 	Table   string                 `json:"table"`
 	Type    OpType                 `json:"type"`
+	Object  string                 `json:"object"`
+	Linked  bool                   `json:"linked"`
 	BlockID BlockID                `json:"block_id"`
 	At      *Pointer               `json:"at"`
 	Props   map[string]interface{} `json:"props"`
@@ -465,20 +471,20 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 		return nil, fmt.Errorf("op is not a insert op")
 	}
 
-	// op must have a type
-	blockType, ok := op.Props["type"].(string)
-	if !ok {
-		return nil, fmt.Errorf("insert op is missing block type")
+	// insert op must have a block object
+	if op.Object == "" {
+		return nil, fmt.Errorf("insert op is missing block object type")
 	}
 
 	return &Block{
 		ParentID: parentID,
-		Type:     blockType,
+		Type:     op.Object,
 		ID:       op.BlockID,
 		Index:    DefaultFracIndex(),
 		Props:    op.Props,
 		Deleted:  false,
 		Erased:   false,
+		Linked:   op.Linked,
 	}, nil
 }
 

@@ -1,6 +1,8 @@
 package blocktree
 
 import (
+	"errors"
+	"github.com/google/btree"
 	"github.com/google/uuid"
 )
 
@@ -33,8 +35,76 @@ type BlockView struct {
 	ParentID uuid.UUID
 	Props    BlockProps
 	Children []*BlockView
+	Linked   []*BlockView
 	Deleted  bool
 	Erased   bool
+}
+
+func BlockViewFromBlock(block *Block) *BlockView {
+	return &BlockView{
+		Type:     block.Type,
+		ID:       block.ID,
+		ParentID: block.ParentID,
+		Props:    block.Props,
+		Deleted:  block.Deleted,
+		Erased:   block.Erased,
+	}
+}
+
+func BlockViewFromBlocks(rootID BlockID, blocks []*Block) (*BlockView, error) {
+	var root *BlockView
+	children := make(map[BlockID]*btree.BTreeG[*Block])
+	linked := make(map[BlockID]*Set[*Block])
+
+	for _, block := range blocks {
+		if block.ID == rootID {
+			root = BlockViewFromBlock(block)
+		}
+
+		if block.Linked {
+			if _, ok := linked[block.ParentID]; !ok {
+				linked[block.ID] = NewSet[*Block]()
+			}
+			linked[block.ParentID].Add(block)
+		} else {
+			if _, ok := children[block.ParentID]; !ok {
+				children[block.ID] = btree.NewG(10, blockLessFunc)
+			}
+			children[block.ParentID].ReplaceOrInsert(block)
+		}
+	}
+
+	if root == nil {
+		return nil, errors.New("root block not found")
+	}
+
+	// build tree function
+	var build func(*BlockView)
+	build = func(block *BlockView) {
+		if children, ok := children[block.ID]; ok {
+			block.Children = make([]*BlockView, 0)
+			children.Ascend(func(item *Block) bool {
+				child := BlockViewFromBlock(item)
+				block.Children = append(block.Children, child)
+				build(child)
+				return true
+			})
+		}
+
+		if linked, ok := linked[block.ID]; ok {
+			block.Linked = make([]*BlockView, 0)
+			for _, item := range linked.ToSlice() {
+				child := BlockViewFromBlock(item)
+				block.Linked = append(block.Linked, child)
+				build(child)
+			}
+		}
+	}
+
+	// build tree
+	build(root)
+
+	return root, nil
 }
 
 type Block struct {
@@ -45,6 +115,7 @@ type Block struct {
 	Props    BlockProps
 	Deleted  bool
 	Erased   bool
+	Linked   bool // linked blocks
 }
 
 func NewBlock(blockID BlockID, parentID ParentID, blockType string) *Block {
@@ -65,6 +136,7 @@ func (b *Block) Clone() *Block {
 		Props:    b.Props,
 		Deleted:  b.Deleted,
 		Erased:   b.Erased,
+		Linked:   b.Linked,
 	}
 }
 

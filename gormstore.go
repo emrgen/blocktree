@@ -3,7 +3,7 @@ package blocktree
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/jinzhu/gorm"
+	"gorm.io/gorm"
 )
 
 var (
@@ -91,9 +91,6 @@ func (g GormStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
 		return nil, res.Error
 	}
 
-	if res.RecordNotFound() {
-		return nil, gorm.ErrRecordNotFound
-	}
 	return model.toBlock()
 }
 

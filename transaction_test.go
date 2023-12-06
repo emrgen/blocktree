@@ -22,17 +22,15 @@ var (
 	b10, _ = uuid.Parse("00000000-0000-0000-0000-000000000010")
 )
 
-func insertOp(blockID uuid.UUID, typ string, refID uuid.UUID, pos PointerPosition) Op {
+func insertOp(blockID uuid.UUID, object string, refID uuid.UUID, pos PointerPosition) Op {
 	return Op{
 		Table:   "block",
 		Type:    OpTypeInsert,
+		Object:  object,
 		BlockID: blockID,
 		At: &Pointer{
 			BlockID:  refID,
 			Position: pos,
-		},
-		Props: map[string]interface{}{
-			"type": typ,
 		},
 	}
 }

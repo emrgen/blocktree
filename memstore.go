@@ -80,7 +80,9 @@ func (ms *MemStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, e
 	}
 
 	children.Ascend(func(item *Block) bool {
-		blocks = append(blocks, item.Clone())
+		if !item.Linked {
+			blocks = append(blocks, item.Clone())
+		}
 		return true
 	})
 
@@ -158,7 +160,7 @@ func (ms *MemStore) GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Blo
 
 	children.Ascend(func(item *Block) bool {
 		blocks = append(blocks, item.Clone())
-		return true
+		return false
 	})
 
 	return blocks, nil
@@ -187,7 +189,7 @@ func (ms *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Bloc
 
 	children.Descend(func(item *Block) bool {
 		blocks = append(blocks, item.Clone())
-		return true
+		return false
 	})
 
 	return blocks, nil
