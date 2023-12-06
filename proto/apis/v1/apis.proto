@@ -40,8 +40,8 @@ message OpProp {
 
 message Op {
   string table = 1;
-  OpType type = 2;
-  string block_id = 3;
+  string block_id = 2;
+  OpType type = 3;
   Pointer at = 4;
   optional string object = 5;
   optional bool linked = 6;
