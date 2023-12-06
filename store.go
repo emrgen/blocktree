@@ -8,7 +8,7 @@ var (
 
 type StoreChange struct {
 	blockChange   *BlockChange
-	jsonDocChange []*JsonDocChange
+	jsonDocChange []*JsonPatch
 	txChange      []*Transaction
 }
 

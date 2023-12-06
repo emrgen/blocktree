@@ -196,13 +196,69 @@ func (ms *MemStore) GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Bloc
 }
 
 func (ms *MemStore) GetParentWithNextBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
-	//TODO implement me
-	panic("implement me")
+	space, err := ms.getSpace(spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*Block, 0)
+	parent, ok := space.parents[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("parent block not found for: %v", id))
+	}
+	blocks = append(blocks, space.blocks[parent].Clone())
+
+	children, ok := space.children[parent]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("block siblings not found id: %v", id))
+	}
+
+	children.DescendLessOrEqual(space.blocks[id], func(item *Block) bool {
+		blocks = append(blocks, item.Clone())
+		if len(blocks) >= 2 {
+			return false
+		}
+		return true
+	})
+
+	if len(blocks) == 1 {
+		return nil, errors.New(fmt.Sprintf("block not found id: %v", id))
+	}
+
+	return blocks, nil
 }
 
 func (ms *MemStore) GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Block, error) {
-	//TODO implement me
-	panic("implement me")
+	space, err := ms.getSpace(spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*Block, 0)
+	parent, ok := space.parents[id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("parent block not found for: %v", id))
+	}
+	blocks = append(blocks, space.blocks[parent].Clone())
+
+	children, ok := space.children[parent]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("block siblings not found id: %v", id))
+	}
+
+	children.AscendGreaterOrEqual(space.blocks[id], func(item *Block) bool {
+		blocks = append(blocks, item.Clone())
+		if len(blocks) >= 2 {
+			return false
+		}
+		return true
+	})
+
+	if len(blocks) == 1 {
+		return nil, errors.New(fmt.Sprintf("block not found id: %v", id))
+	}
+
+	return blocks, nil
 }
 
 func (ms *MemStore) CreateSpace(space *Space) error {

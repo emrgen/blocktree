@@ -83,6 +83,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 					}
 					stage.park(block)
 				} else {
+					logrus.Infof("load parent block %v", op.At.BlockID)
 					blocks, err := tx.loadRelevantBlocks(store, &op)
 					if err != nil {
 						return nil, err
@@ -405,13 +406,16 @@ func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error)
 		switch {
 		case op.At.Position == PositionAfter:
 			blocks, err := store.GetParentWithNextBlock(&tx.SpaceID, op.At.BlockID)
+			logrus.Info("get parent with next block ", blocks)
 			if err != nil {
+				logrus.Infof("get parent with next block error: %v", err)
 				return nil, err
 			}
 			relevantBlocks = append(relevantBlocks, blocks...)
 		case op.At.Position == PositionBefore:
 			blocks, err := store.GetParentWithPrevBlock(&tx.SpaceID, op.At.BlockID)
 			if err != nil {
+				logrus.Infof("get parent with prev block error: %v", err)
 				return nil, err
 			}
 			relevantBlocks = append(relevantBlocks, blocks...)

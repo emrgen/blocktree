@@ -106,6 +106,43 @@ func TestInsertOp(t *testing.T) {
 	//store.Print(&s1)
 }
 
+func TestInsertOpBetween(t *testing.T) {
+	var err error
+	store := NewMemStore()
+	err = createSpace(store, s1)
+	assert.NoError(t, err)
+
+	// create a block transaction
+	tx := &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b1, "page", s1, PositionStart),
+			insertOp(b2, "title", b1, PositionStart),
+		},
+	}
+
+	applyTransaction(t, store, tx)
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b3, "p1", b2, PositionAfter),
+			insertOp(b4, "p2", b3, PositionBefore),
+			insertOp(b5, "p3", b1, PositionEnd),
+		},
+	}
+
+	applyTransaction(t, store, tx)
+
+	block, err := store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+	assert.Equal(t, b1, block.ID)
+
+	//store.Print(&s1)
+}
+
 func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
 	var err error
 	err = createSpace(store, s1)
@@ -130,6 +167,18 @@ func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
 	return err
 }
 
+func applyTransaction(t *testing.T, store *MemStore, tx *Transaction) {
+	changes, err := tx.Prepare(store)
+	assert.NoError(t, err)
+
+	assert.Condition(t, func() bool {
+		return changes != nil
+	})
+
+	err = store.ApplyChange(&s1, changes)
+	assert.NoError(t, err)
+}
+
 func TestMoveOp(t *testing.T) {
 	var err error
 	store := NewMemStore()
@@ -142,24 +191,26 @@ func TestMoveOp(t *testing.T) {
 		Ops: []Op{
 			moveOp(b1, b2, PositionStart),
 			moveOp(b3, b2, PositionEnd),
-			moveOp(b4, b1, PositionAfter),
-			moveOp(b5, b3, PositionBefore),
 		},
 	}
 
 	_, err = store.GetBlock(&s1, b1)
 	assert.NoError(t, err)
 
-	changes, err := tx.Prepare(store)
-	assert.NoError(t, err)
-	assert.Condition(t, func() bool {
-		return changes != nil
-	})
+	applyTransaction(t, store, tx)
 
-	err = store.ApplyChange(&s1, changes)
-	assert.NoError(t, err)
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			moveOp(b4, b1, PositionAfter),
+			moveOp(b5, b3, PositionBefore),
+		},
+	}
 
-	//store.Print(&s1)
+	applyTransaction(t, store, tx)
+
+	store.Print(&s1)
 }
 
 func TestMoveOpWithSimpleCycle(t *testing.T) {
@@ -243,6 +294,9 @@ func TestBlockLink(t *testing.T) {
 	assert.NoError(t, err)
 	v1, err := BlockViewFromBlocks(s1, descendants)
 	assert.NoError(t, err)
+	assert.Condition(t, func() bool {
+		return len(v1.Children) == 5
+	})
 
-	v1.Print()
+	//v1.Print()
 }
