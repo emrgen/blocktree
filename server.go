@@ -23,15 +23,17 @@ import (
 
 type Server struct {
 	Config *Config
+	store  Store
 }
 
-func NewServer(config *Config) *Server {
+func NewServer(store Store, config *Config) *Server {
 	return &Server{
+		store:  store,
 		Config: config,
 	}
 }
 
-func (s *Server) Start(store Store) error {
+func (s *Server) Start() error {
 	grpcPort := fmt.Sprintf(":%d", s.Config.GrpcPort)
 	httpPort := fmt.Sprintf(":%d", s.Config.HttpPort)
 
@@ -53,7 +55,7 @@ func (s *Server) Start(store Store) error {
 	)
 
 	// Register the server with the gRPC server
-	v1.RegisterBlocktreeServer(grpcServer, &Api{store: store})
+	v1.RegisterBlocktreeServer(grpcServer, NewApi(s.store))
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	endpoint := "localhost" + grpcPort
@@ -132,6 +134,7 @@ func (s *Server) Start(store Store) error {
 		logrus.Errorf("error stopping rest gateway: %v", err)
 	}
 
+	// wait for the servers to stop
 	wg.Wait()
 
 	return nil

@@ -16,6 +16,12 @@ type Api struct {
 	store Store
 }
 
+func NewApi(store Store) *Api {
+	return &Api{
+		store: store,
+	}
+}
+
 // CreateSpace creates a new space in the blocktree store
 func (a *Api) CreateSpace(ctx context.Context, req *v1.CreateSpaceRequest) (*v1.CreateSpaceResponse, error) {
 	spaceID, _ := uuid.Parse(req.GetSpaceId())

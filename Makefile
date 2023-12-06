@@ -1,3 +1,7 @@
+start:
+	@echo "Starting blocktree server"
+	 @go run cmd/cli/main.go serve
+
 test:
 	@echo "Running tests..."
 	go test
