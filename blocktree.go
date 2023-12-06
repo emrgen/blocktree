@@ -173,37 +173,45 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			st.change.addUpdated(block)
 			st.change.addPropSet(parent)
 
-			//case OpTypeUpdate:
-			//	if block, ok := blocks[op.BlockID]; ok {
-			//		block.Props = op.Props
-			//		stage.updateChange(block, Updated)
-			//	}
-			//case OpTypePatch:
-			//	if block, ok := blocks[op.BlockID]; ok {
-			//		block.Props = op.Props
-			//		stage.updateChange(block, PropSet)
-			//	}
+		case OpTypeUpdate:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("update block not found")
+			}
+			block.Props = op.Props
+			st.change.addPropSet(block)
+		case OpTypePatch:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("patch block not found")
+			}
+			block.Props = op.Props
+			st.change.addPropSet(block)
 
-			//case OpTypeLink:
-			//	if block, ok := blocks[op.BlockID]; ok {
-			//		block.ParentID = op.ParentID
-			//		stage.updateChange(block, Updated)
-			//	}
-			//case OpTypeUnlink:
-			//	if block, ok := blocks[op.BlockID]; ok {
-			//		block.ParentID = op.ParentID
-			//		stage.updateChange(block, Updated)
-			//	}
-			//case OpTypeDelete:
-			//	if block, ok := blocks[op.BlockID]; ok {
-			//		block.Deleted = true
-			//		stage.updateChange(block, Updated)
-			//	}
-			//case OpTypeErase:
-			//	if block, ok := blocks[op.BlockID]; ok {
-			//		block.Erased = true
-			//		stage.updateChange(block, Updated)
-			//	}
+		//case OpTypeLink:
+		//	if block, ok := blocks[op.BlockID]; ok {
+		//		block.ParentID = op.ParentID
+		//		stage.updateChange(block, Updated)
+		//	}
+		//case OpTypeUnlink:
+		//	if block, ok := blocks[op.BlockID]; ok {
+		//		block.ParentID = op.ParentID
+		//		stage.updateChange(block, Updated)
+		//	}
+		case OpTypeDelete:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("erase block not found")
+			}
+			block.Deleted = true
+			st.change.addUpdated(block)
+		case OpTypeErase:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("erase block not found")
+			}
+			block.Erased = true
+			st.change.addUpdated(block)
 		}
 	}
 
@@ -303,7 +311,7 @@ func (st *StageTable) updateChange(block *Block, changeType BlockChangeType) {
 	case Inserted:
 		st.change.inserted.Add(block)
 	case Updated:
-		st.change.moved.Add(block)
+		st.change.updated.Add(block)
 	case PropSet:
 		st.change.propSet.Add(block)
 	}
@@ -441,7 +449,7 @@ func (st *StageTable) contains(id BlockID) bool {
 // BlockChange tracks block changes in a transaction
 type BlockChange struct {
 	inserted *Set[*Block]
-	moved    *Set[*Block]
+	updated  *Set[*Block]
 	propSet  *Set[*Block]
 }
 
@@ -449,7 +457,7 @@ type BlockChange struct {
 func newBlockChange() BlockChange {
 	return BlockChange{
 		inserted: NewSet[*Block](),
-		moved:    NewSet[*Block](),
+		updated:  NewSet[*Block](),
 		propSet:  NewSet[*Block](),
 	}
 }
@@ -465,8 +473,8 @@ func (bc *BlockChange) Inserted() []*Block {
 }
 
 func (bc *BlockChange) Updated() []*Block {
-	blocks := make([]*Block, 0, bc.moved.Cardinality())
-	bc.moved.Difference(bc.inserted).ForEach(func(item *Block) bool {
+	blocks := make([]*Block, 0, bc.updated.Cardinality())
+	bc.updated.Difference(bc.inserted).ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
 		return true
 	})
@@ -489,7 +497,7 @@ func (bc *BlockChange) addInserted(id *Block) {
 }
 
 func (bc *BlockChange) addUpdated(id *Block) {
-	bc.moved.Add(id)
+	bc.updated.Add(id)
 }
 
 func (bc *BlockChange) addPropSet(id *Block) {
@@ -497,14 +505,14 @@ func (bc *BlockChange) addPropSet(id *Block) {
 }
 
 func (bc *BlockChange) empty() bool {
-	return bc.inserted.Cardinality() == 0 && bc.moved.Cardinality() == 0 && bc.propSet.Cardinality() == 0
+	return bc.inserted.Cardinality() == 0 && bc.updated.Cardinality() == 0 && bc.propSet.Cardinality() == 0
 }
 
 type BlockChangeType string
 
 const (
 	Inserted BlockChangeType = "inserted"
-	Updated  BlockChangeType = "moved" // includes move, link, unlink, delete, erase
+	Updated  BlockChangeType = "updated" // includes move, link, unlink, delete, erase
 	PropSet  BlockChangeType = "prop_set"
 )
 

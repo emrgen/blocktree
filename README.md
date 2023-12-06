@@ -4,6 +4,7 @@ A reusable library for block storage
 
 ## Hierarchical Data Model
 ```text
+    0000
     ├── space-1
     │   ├── block-1.1
     │   └── block-1.2

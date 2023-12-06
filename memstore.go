@@ -304,7 +304,7 @@ func (ms *MemStore) ApplyChange(spaceID *SpaceID, change *StoreChange) error {
 			}
 		}
 
-		for _, block := range blockChange.moved.ToSlice() {
+		for _, block := range blockChange.updated.ToSlice() {
 			//logrus.Infof("updating block %v", block)
 			storeBlock, ok := space.blocks[block.ID]
 			if !ok {

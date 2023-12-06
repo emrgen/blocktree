@@ -11,23 +11,26 @@ import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
 enum OpType {
-  OP_TYPE_INSERT = 0;
-  OP_TYPE_MOVE = 1;
-  OP_TYPE_UPDATE = 2;
-  OP_TYPE_DELETE = 3;
-  OP_TYPE_ERASE = 4;
+  OP_TYPE_UNKNOWN = 0;
+  OP_TYPE_INSERT = 1;
+  OP_TYPE_MOVE = 2;
+  OP_TYPE_UPDATE = 3;
+  OP_TYPE_PATCH = 4;
+  OP_TYPE_DELETE = 5;
+  OP_TYPE_ERASE = 6;
 }
 
 enum PointerPosition {
-  POINTER_POSITION_BEFORE = 0;
-  POINTER_POSITION_AFTER = 1;
+  POINTER_POSITION_UNKNOWN = 0;
+  POINTER_POSITION_BEFORE = 1;
+  POINTER_POSITION_AFTER = 2;
   POINTER_POSITION_START = 3;
   POINTER_POSITION_END = 4;
 }
 
 message Pointer {
-  string block_id = 1;
-  string position = 2;
+  string block_id = 1 [(validate.rules).string = {uuid: true}];
+  PointerPosition position = 2;
 }
 
 message Op {
@@ -35,14 +38,41 @@ message Op {
   OpType type = 2;
   string block_id = 3;
   Pointer at = 4;
-  string props = 5;
-  string patch = 6;
+  optional string object = 5;
+  optional bool linked = 6;
+  optional string props = 7;
+  optional string patch = 8;
+}
+
+message CreateSpaceRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string name = 2;
+}
+
+message CreateSpaceResponse {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
 }
 
 message Transaction {
-  string id = 1;
-  string space_id = 2;
-  string user_id = 3;
+  string id = 1 [(validate.rules).string = {uuid: true}];
+  string space_id = 2 [(validate.rules).string = {uuid: true}];
+  string user_id = 3 [(validate.rules).string = {uuid: true}];
   repeated Op ops = 4;
   google.protobuf.Timestamp time = 5;
+}
+
+service Blocktree {
+  rpc CreateTransaction(Transaction) returns (Transaction) {
+    option (google.api.http) = {
+      post: "/v1/transactions"
+      body: "*"
+    };
+  }
+
+  rpc CreateSpace(CreateSpaceRequest) returns (CreateSpaceResponse) {
+    option (google.api.http) = {
+      post: "/v1/spaces"
+      body: "*"
+    };
+  }
 }

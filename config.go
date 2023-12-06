@@ -13,6 +13,16 @@ type Config struct {
 	HttpPort int
 }
 
-func NewConfig() *Config {
-	return &Config{}
+func DefaultConfig() *Config {
+	return &Config{
+		GrpcPort: 1000,
+		HttpPort: 1001,
+	}
+}
+
+func NewConfig(grpcPort, httpPort int) *Config {
+	return &Config{
+		GrpcPort: grpcPort,
+		HttpPort: httpPort,
+	}
 }
