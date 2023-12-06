@@ -119,7 +119,11 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 					return nil, err
 				}
 			case PositionInside:
-				return nil, errors.New("invalid position inside for insert block")
+				if block.Linked {
+					st.placeInside(block, op.At.BlockID, Inserted)
+				} else {
+					return nil, errors.New("invalid position inside for insert block")
+				}
 			}
 
 			st.unpark(block.ID)
@@ -288,6 +292,10 @@ func (st *StageTable) placeAfter(block *Block, prevID BlockID, action BlockChang
 	}
 
 	return nil
+}
+
+func (st *StageTable) placeInside(block *Block, parentID BlockID, action BlockChangeType) {
+	st.updateChange(block, action)
 }
 
 func (st *StageTable) updateChange(block *Block, changeType BlockChangeType) {

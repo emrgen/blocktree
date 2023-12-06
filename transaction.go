@@ -126,7 +126,25 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 					stage.park(block)
 				}
 			case op.At.Position == PositionInside:
-				return nil, fmt.Errorf("cannot insert inside a block: %v", op)
+				if op.Linked {
+					blocks, err := tx.loadRelevantBlocks(store, &op)
+					if err != nil {
+						return nil, err
+					}
+					if len(blocks) < 1 {
+						return nil, fmt.Errorf("cannot find referenced block for linking: %v", op)
+					}
+					for _, block := range blocks {
+						stage.add(block)
+					}
+					block, err := op.IntoBlock(op.At.BlockID)
+					if err != nil {
+						return nil, err
+					}
+					stage.park(block)
+				} else {
+					return nil, fmt.Errorf("cannot insert inside a block: %v", op)
+				}
 			}
 		case op.Type == OpTypeMove:
 			if op.At == nil {

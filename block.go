@@ -142,6 +142,10 @@ func (b *Block) Clone() *Block {
 
 // Less allows btree entry
 func (b *Block) Less(other *Block) bool {
+	// linked blocks will have clashing index causing btree to block overwrite by id
+	if b.Index.Equals(other.Index) {
+		return b.ID.String() < other.ID.String()
+	}
 	return b.Index.Compare(other.Index) < 0
 }
 

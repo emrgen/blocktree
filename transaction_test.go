@@ -47,6 +47,20 @@ func moveOp(blockID uuid.UUID, refID uuid.UUID, pos PointerPosition) Op {
 	}
 }
 
+func linkOp(blockID uuid.UUID, object string, refID uuid.UUID) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeInsert,
+		Object:  object,
+		Linked:  true,
+		BlockID: blockID,
+		At: &Pointer{
+			BlockID:  refID,
+			Position: PositionInside,
+		},
+	}
+}
+
 func createSpace(store *MemStore, spaceID uuid.UUID) error {
 	space := &Space{
 		ID:   spaceID,
@@ -89,7 +103,7 @@ func TestInsertOp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, b1, block.ID)
 
-	store.Print(&s1)
+	//store.Print(&s1)
 }
 
 func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
@@ -145,7 +159,7 @@ func TestMoveOp(t *testing.T) {
 	err = store.ApplyChange(&s1, changes)
 	assert.NoError(t, err)
 
-	store.Print(&s1)
+	//store.Print(&s1)
 }
 
 func TestMoveOpWithSimpleCycle(t *testing.T) {
@@ -192,4 +206,32 @@ func TestMoveOpWithComplexCycle(t *testing.T) {
 
 	_, err = tx.Prepare(store)
 	assert.EqualError(t, err, ErrDetectedCycle.Error())
+}
+
+func TestBlockLink(t *testing.T) {
+	var err error
+	store := NewMemStore()
+	err = prepareSpace(store, s1)
+	assert.NoError(t, err)
+
+	tx := &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			linkOp(b6, "l1", b2),
+			linkOp(b7, "l2", b2),
+		},
+	}
+
+	change, err := tx.Prepare(store)
+
+	err = store.ApplyChange(&s1, change)
+	assert.NoError(t, err)
+
+	space, err := store.getSpace(&s1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, space.children[b2].Len(), "b2 should have 2 linked blocks")
+
+	//store.Print(&s1)
 }
