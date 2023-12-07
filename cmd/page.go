@@ -68,7 +68,7 @@ func newPageGetCmd() *cobra.Command {
 		},
 	}
 
-	getCmd.Flags().StringVarP(&pageID, "page", "p", "", "Page ID")
+	getCmd.Flags().StringVarP(&pageID, "page", "b", "", "Page ID")
 	getCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
 
 	return getCmd
@@ -122,7 +122,7 @@ func newPageSubPagesCmd() *cobra.Command {
 		},
 	}
 
-	getCmd.Flags().StringVarP(&pageID, "page", "p", "", "Page ID")
+	getCmd.Flags().StringVarP(&pageID, "page", "b", "", "Page ID")
 	getCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
 
 	return getCmd

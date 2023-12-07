@@ -7,21 +7,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var _ v1.BlocktreeServer = (*GrpcApi)(nil)
+var _ v1.BlocktreeServer = (*grpcApi)(nil)
 
-type GrpcApi struct {
+type grpcApi struct {
 	v1.BlocktreeServer
 	api *Api
 }
 
-func NewGrpcApi(api *Api) *GrpcApi {
-	return &GrpcApi{
+func newGrpcApi(api *Api) *grpcApi {
+	return &grpcApi{
 		api: api,
 	}
 }
 
 // ApplyTransactions applies a list of transactions to the blocktree store
-func (a *GrpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactionRequest) (*v1.ApplyTransactionResponse, error) {
+func (a *grpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactionRequest) (*v1.ApplyTransactionResponse, error) {
 	txs := req.GetTransactions()
 	transactions := make([]*Transaction, 0, len(txs))
 	for _, tx := range txs {
@@ -48,7 +48,7 @@ func (a *GrpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactio
 }
 
 // CreateSpace creates a new space in the blocktree store
-func (a *GrpcApi) CreateSpace(ctx context.Context, req *v1.CreateSpaceRequest) (*v1.CreateSpaceResponse, error) {
+func (a *grpcApi) CreateSpace(ctx context.Context, req *v1.CreateSpaceRequest) (*v1.CreateSpaceResponse, error) {
 	spaceID, _ := uuid.Parse(req.GetSpaceId())
 	err := a.api.CreateSpace(spaceID, req.GetName())
 	if err != nil {
@@ -60,7 +60,7 @@ func (a *GrpcApi) CreateSpace(ctx context.Context, req *v1.CreateSpaceRequest) (
 	}, nil
 }
 
-func (a *GrpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlockResponse, error) {
+func (a *grpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlockResponse, error) {
 	blockID, _ := uuid.Parse(req.GetBlockId())
 	spaceID := &uuid.Nil
 	var err error
@@ -90,7 +90,7 @@ func (a *GrpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.Ge
 	}, nil
 }
 
-func (a *GrpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
+func (a *grpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
 	var err error
 	var spaceID *uuid.UUID
 
@@ -129,7 +129,7 @@ func (a *GrpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildren
 	}, nil
 }
 
-func (a *GrpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDescendantsRequest) (*v1.GetBlockDescendantsResponse, error) {
+func (a *grpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDescendantsRequest) (*v1.GetBlockDescendantsResponse, error) {
 	logrus.Infof("Getting descendant blocks for block: %s", req.GetBlockId())
 	var err error
 	blockID, err := uuid.Parse(req.GetBlockId())
@@ -168,7 +168,7 @@ func (a *GrpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDesce
 	}, nil
 }
 
-func (a *GrpcApi) GetBlockPage(ctx context.Context, request *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
+func (a *grpcApi) GetBlockPage(ctx context.Context, request *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
