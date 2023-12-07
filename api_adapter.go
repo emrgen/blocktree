@@ -8,10 +8,12 @@ import (
 )
 
 func BlockToProtoV1(b *Block) *v1.Block {
+	jsonContent := b.Json.String()
 	return &v1.Block{
 		Object:   b.Type,
 		BlockId:  b.ID.String(),
 		ParentId: b.ParentID.String(),
+		Json:     &jsonContent,
 	}
 }
 

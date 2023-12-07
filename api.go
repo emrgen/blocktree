@@ -102,6 +102,8 @@ func (a *Api) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlo
 		return nil, err
 	}
 
+	logrus.Infof("block %v", block)
+
 	return &v1.GetBlockResponse{
 		Block: BlockToProtoV1(block),
 	}, nil

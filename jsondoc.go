@@ -58,5 +58,9 @@ func (j *JsonDoc) Clone() *JsonDoc {
 }
 
 func (j *JsonDoc) String() string {
+	if j == nil {
+		return ""
+	}
+
 	return string(j.Content)
 }

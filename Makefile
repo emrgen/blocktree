@@ -1,3 +1,7 @@
+build:
+	@echo "Building blocktree server"
+	@go build -o ./bin/bt ./cmd/cli/main.go
+
 start:
 	@echo "Starting blocktree server"
 	@go run cmd/cli/main.go serve
@@ -5,6 +9,7 @@ start:
 init: protoc deps
 	@echo "blocktree setup complete"
 	@echo "to start the server run: make start"
+
 test:
 	@echo "Running tests..."
 	go test
