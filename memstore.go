@@ -69,6 +69,13 @@ type MemStore struct {
 	blockSpace map[BlockID]SpaceID
 }
 
+func NewMemStore() *MemStore {
+	return &MemStore{
+		spaces:     make(map[SpaceID]*spaceStore),
+		blockSpace: make(map[BlockID]SpaceID),
+	}
+}
+
 func (ms *MemStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) {
 	space, ok := ms.spaces[*spaceID]
 	if !ok {
@@ -294,12 +301,6 @@ func (ms *MemStore) CreateSpace(space *Space) error {
 	}
 
 	return nil
-}
-
-func NewMemStore() *MemStore {
-	return &MemStore{
-		spaces: make(map[SpaceID]*spaceStore),
-	}
 }
 
 func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {

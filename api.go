@@ -23,12 +23,14 @@ func NewApi(store Store) *Api {
 // ApplyTransactions applies a list of transactions to the blocktree store
 func (a *Api) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactionRequest) (*v1.ApplyTransactionResponse, error) {
 	txs := req.GetTransactions()
-	transactions := make([]*Transaction, len(txs))
+	transactions := make([]*Transaction, 0, len(txs))
 	for _, tx := range txs {
+		//logrus.Info("Parsing transaction: ", tx)
 		transaction, err := TransactionFromProtoV1(tx)
 		if err != nil {
 			return nil, err
 		}
+		//logrus.Info("Parsed transaction: ", transaction)
 		transactions = append(transactions, transaction)
 	}
 
@@ -37,20 +39,25 @@ func (a *Api) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactionReq
 	}
 
 	for _, tx := range transactions {
+		//logrus.Info("Applying transaction: ", tx)
 		change, err := tx.Prepare(a.store)
 		if err != nil {
+			//logrus.Info("Failed to prepare transaction: ", err)
 			if errors.Is(err, ErrDetectedCycle) || errors.Is(err, ErrCreatesCycle) {
 				continue
 			}
 
 			return nil, err
 		}
+		//logrus.Info("Prepared transaction: ", change)
 		err = a.store.Apply(&tx.SpaceID, change)
+		//logrus.Infof("Applied transaction: %s", tx.ID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
+	//logrus.Info("Applied transactions: ", transactions)
 	return res, nil
 }
 

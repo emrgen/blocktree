@@ -7,10 +7,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	nilID = "00000000-0000-0000-0000-000000000000"
-)
-
 func newSpaceCmd() *cobra.Command {
 	var spaceCmd = &cobra.Command{
 		Use:   "space",
@@ -32,10 +28,7 @@ func newSpaceInsertCmd() *cobra.Command {
 				panic("space ID is required")
 			}
 
-			if len(spaceID) <= 36 {
-				idLen := len(spaceID)
-				spaceID = nilID[:36-idLen] + spaceID
-			}
+			spaceID = sanitizeID(spaceID)
 
 			if name == "" {
 				panic("name is required")

@@ -38,9 +38,18 @@ func BlockViewToProtoV1(b *BlockView) *v1.Block {
 }
 
 func TransactionFromProtoV1(txv1 *v1.Transaction) (*Transaction, error) {
-	id, _ := uuid.Parse(txv1.TransactionId)
-	spaceID, _ := uuid.Parse(txv1.SpaceId)
-	userID, _ := uuid.Parse(txv1.UserId)
+	id, err := uuid.Parse(txv1.TransactionId)
+	if err != nil {
+		return nil, err
+	}
+	spaceID, err := uuid.Parse(txv1.SpaceId)
+	if err != nil {
+		return nil, err
+	}
+	userID, err := uuid.Parse(txv1.UserId)
+	if err != nil {
+		return nil, err
+	}
 	ops := make([]Op, 0)
 	for _, op := range txv1.Ops {
 		op, err := OpFromProtoV1(op)
@@ -67,23 +76,65 @@ func OpFromProtoV1(v1op *v1.Op) (*Op, error) {
 		return nil, err
 	}
 
-	atBlockID, err := uuid.Parse(v1op.At.BlockId)
-	if err != nil {
-		return nil, err
-	}
-
 	if v1op.Table == "" {
 		return nil, fmt.Errorf("invalid op type without table")
 	}
 
+	opType := ""
+	switch v1op.Type {
+	case v1.OpType_OP_TYPE_INSERT:
+		opType = "insert"
+	case v1.OpType_OP_TYPE_MOVE:
+		opType = "move"
+	case v1.OpType_OP_TYPE_UPDATE:
+		opType = "update"
+	case v1.OpType_OP_TYPE_DELETE:
+		opType = "delete"
+	case v1.OpType_OP_TYPE_ERASE:
+		opType = "erase"
+	}
+
+	if opType == "" {
+		return nil, fmt.Errorf("invalid op type: %s", v1op.Type.String())
+	}
+
 	op := &Op{
-		Type:    OpType(v1op.Type.String()),
+		Type:    OpType(opType),
 		BlockID: blockID,
 		Table:   v1op.Table,
-		At: &Pointer{
+	}
+
+	// at is required for move and insert ops
+	if v1op.At == nil && (op.Type == "insert" || op.Type == "move") {
+		return nil, fmt.Errorf("invalid op type %s with at", op.Type)
+	}
+
+	if v1op.At != nil {
+		atBlockID, err := uuid.Parse(v1op.At.BlockId)
+		if err != nil {
+			return nil, err
+		}
+
+		pos := ""
+		switch v1op.At.Position {
+		case v1.PointerPosition_POINTER_POSITION_START:
+			pos = "start"
+		case v1.PointerPosition_POINTER_POSITION_END:
+			pos = "end"
+		case v1.PointerPosition_POINTER_POSITION_BEFORE:
+			pos = "before"
+		case v1.PointerPosition_POINTER_POSITION_AFTER:
+			pos = "after"
+		}
+
+		if pos == "" {
+			return nil, fmt.Errorf("invalid pointer position: %s", v1op.At.Position.String())
+		}
+
+		op.At = &Pointer{
 			BlockID:  atBlockID,
-			Position: PointerPosition(v1op.At.Position.String()),
-		},
+			Position: PointerPosition(pos),
+		}
 	}
 
 	if v1op.Object != nil {

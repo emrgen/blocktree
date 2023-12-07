@@ -28,15 +28,19 @@ type Transaction struct {
 
 func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 	// check if transaction is not already applied
-	transaction, err := store.GetLatestTransaction(&tx.SpaceID)
-	if err != nil {
-		return nil, err
-	}
-	if transaction != nil && transaction.Counter >= tx.Counter {
-		return nil, fmt.Errorf("transaction already applied")
-	}
+	//transaction, err := store.GetLatestTransaction(&tx.SpaceID)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//if transaction != nil && transaction.Counter >= tx.Counter {
+	//	return nil, fmt.Errorf("transaction already applied")
+	//}
 
 	//check if transaction is valid (no cycles, etc)
+
+	if tx.Ops == nil || len(tx.Ops) == 0 {
+		return nil, errors.New("transaction has no ops")
+	}
 
 	// load the referenced blocks
 	existingBlockIDs, _ := tx.relevantBlockIDs()
@@ -52,6 +56,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 	}
 
 	if len(relevantBlocks) != existingBlockIDs.Cardinality() {
+		logrus.Infof("relevant blocks: %v", existingBlockIDs.ToSlice())
 		return nil, fmt.Errorf("cannot find all referenced blocks")
 	}
 	stage := NewStageTable()
@@ -287,6 +292,7 @@ func (tx *Transaction) relevantBlockIDs() (*Set[BlockID], *Set[BlockID]) {
 	inserted := NewSet[uuid.UUID]()
 
 	for _, op := range tx.Ops {
+		logrus.Infof("op: %v", op)
 		if op.Type == OpTypeInsert {
 			if op.At != nil {
 				if !inserted.Contains(op.At.BlockID) {
