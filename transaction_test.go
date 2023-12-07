@@ -1,7 +1,6 @@
 package blocktree
 
 import (
-	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -369,14 +368,13 @@ func TestPatchOp(t *testing.T) {
 	}
 	applyTransaction(t, store, tx)
 
-	p1, err := jsonpatch.CreateMergePatch([]byte(`{}`), []byte(`{"name":"John Doe"}`))
-	assert.NoError(t, err)
+	patch := []byte(`[{"op":"add","path":"/name","value":"John Doe"}]`)
 
 	tx = &Transaction{
 		ID:      uuid.New(),
 		SpaceID: s1,
 		Ops: []Op{
-			patchOp(b1, p1),
+			patchOp(b1, patch),
 		},
 	}
 	applyTransaction(t, store, tx)
@@ -385,7 +383,7 @@ func TestPatchOp(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, `{"name":"John Doe"}`, string(block.Json.Content))
 
-	patch := []byte(`{"name":"John Doe","age":30}`)
+	patch = []byte(`[{"op":"add","path":"/age","value":30}]`)
 	tx = &Transaction{
 		ID:      uuid.New(),
 		SpaceID: s1,

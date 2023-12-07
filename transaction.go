@@ -238,7 +238,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			case op.At.Position == PositionInside:
 				return nil, fmt.Errorf("cannot move inside a block: %v", op)
 			}
-		case op.Type == OpTypeUpdate || op.Type == OpTypePatch:
+		case op.Type == OpTypeUpdate || op.Type == OpTypePatch || op.Type == OpTypeDelete || op.Type == OpTypeErase:
 			if ok := stage.contains(op.BlockID); ok {
 				continue
 			}
@@ -256,20 +256,6 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			panic("not implemented")
 		case op.Type == OpTypeUnlink:
 			panic("not implemented")
-		case op.Type == OpTypeDelete || op.Type == OpTypeErase || op.Type == OpTypePatch:
-			if ok := stage.contains(op.BlockID); ok {
-				continue
-			}
-			blocks, err := tx.loadRelevantBlocks(store, &op)
-			if err != nil {
-				return nil, err
-			}
-			if len(blocks) < 1 {
-				return nil, fmt.Errorf("cannot find referenced block for delete: %v", op)
-			}
-			for _, block := range blocks {
-				stage.add(block)
-			}
 		}
 	}
 

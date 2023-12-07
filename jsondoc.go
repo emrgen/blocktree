@@ -34,10 +34,16 @@ func (j *JsonDoc) Apply(patch JsonPatch) error {
 	if oldContent == nil {
 		oldContent = []byte(`{}`)
 	}
-	content, err := jsonpatch.MergePatch(oldContent, patch)
+	ready, err := jsonpatch.DecodePatch(patch)
 	if err != nil {
 		return err
 	}
+
+	content, err := ready.Apply(oldContent)
+	if err != nil {
+		return err
+	}
+
 	j.Content = content
 
 	return nil

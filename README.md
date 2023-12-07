@@ -23,9 +23,10 @@ A reusable library for block storage
 
 - [x] insert block
 - [ ] update block
+- [x] patch block
 - [ ] delete block
 - [ ] move block
-- [ ] get block
+- [x] get block
 - [ ] get all descendants of a block
 - [ ] list blocks by parent
 - [ ] list page blocks by space
@@ -33,3 +34,4 @@ A reusable library for block storage
 - [ ] update space
 - [ ] delete space
 - [ ] get space
+- [ ] get backlinks of a block
