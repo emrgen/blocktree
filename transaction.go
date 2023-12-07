@@ -189,7 +189,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 
 			stage.add(parent)
 
-			if _, ok := stage.parked(op.At.BlockID); !ok {
+			if _, ok := stage.parked(op.At.BlockID); ok {
 				continue
 			}
 
@@ -215,7 +215,6 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 				block := NewBlock(op.BlockID, parent.ID, "")
 				stage.add(block)
 			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
-				logrus.Infof("load parent block %v", op.At.BlockID)
 				blocks, err := tx.loadRelevantBlocks(store, &op)
 				if err != nil {
 					return nil, err

@@ -9,13 +9,13 @@ type Api struct {
 	store Store
 }
 
-func NewApi(store Store) *Api {
+func New(store Store) *Api {
 	return &Api{
 		store: store,
 	}
 }
 
-func (a *Api) ApplyTransactions(transactions []*Transaction) error {
+func (a *Api) Apply(transactions ...*Transaction) error {
 	for _, tx := range transactions {
 		change, err := tx.Prepare(a.store)
 		if err != nil {

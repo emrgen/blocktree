@@ -70,6 +70,15 @@ func patchOp(blockID uuid.UUID, patch []byte) Op {
 	}
 }
 
+func createTx(spaceID uuid.UUID, ops ...Op) *Transaction {
+	return &Transaction{
+		ID:      uuid.New(),
+		SpaceID: spaceID,
+		UserID:  uuid.Nil,
+		Ops:     ops,
+	}
+}
+
 func createSpace(store *MemStore, spaceID uuid.UUID) error {
 	space := &Space{
 		ID:   spaceID,
@@ -85,17 +94,13 @@ func TestInsertOp(t *testing.T) {
 	assert.NoError(t, err)
 
 	// create a block transaction
-	tx := &Transaction{
-		ID:      uuid.New(),
-		SpaceID: s1,
-		Ops: []Op{
-			insertOp(b1, "page", s1, PositionStart),
-			insertOp(b2, "title", b1, PositionStart),
-			insertOp(b3, "p1", b2, PositionAfter),
-			insertOp(b4, "p2", b3, PositionBefore),
-			insertOp(b5, "p3", b1, PositionEnd),
-		},
-	}
+	tx := createTx(s1,
+		insertOp(b1, "page", s1, PositionStart),
+		insertOp(b2, "title", b1, PositionStart),
+		insertOp(b3, "p1", b2, PositionAfter),
+		insertOp(b4, "p2", b3, PositionBefore),
+		insertOp(b5, "p3", b1, PositionEnd),
+	)
 
 	// apply the transaction
 	changes, err := tx.Prepare(store)

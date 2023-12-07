@@ -295,6 +295,10 @@ func (ms *MemStore) CreateSpace(space *Space) error {
 
 	ms.spaces[space.ID] = newSpaceStore()
 	spaceBlock := NewBlock(space.ID, RootBlockID, "space")
+	spaceBlock.Props = map[string]interface{}{
+		"name": space.Name,
+	}
+
 	err := ms.CreateBlock(&space.ID, spaceBlock)
 	if err != nil {
 		return err
@@ -353,11 +357,6 @@ func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
 	return nil
 }
 
-func (ms *MemStore) PutSpace(spaceID *SpaceID) error {
-	ms.spaces[*spaceID] = newSpaceStore()
-	return nil
-}
-
 func (ms *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 	space, ok := ms.spaces[*spaceID]
 	if !ok {
@@ -410,8 +409,13 @@ func (ms *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEd
 		curr := id
 		for {
 			parent, ok := space.parents[curr]
-			if !ok && curr != *spaceID {
+
+			if !ok {
 				return nil, errors.New(fmt.Sprintf("non space block %v has no parent", curr))
+			}
+
+			if parent == RootBlockID {
+				break
 			}
 
 			edges = append(edges, BlockEdge{parentID: parent, childID: curr})

@@ -42,6 +42,6 @@ type Store interface {
 	TransactionStore
 	JsonDocStore
 
-	// Apply applies store change to db in one transaction
+	// Apply applies blocktree change to db in one transaction
 	Apply(space *SpaceID, change *StoreChange) error
 }
