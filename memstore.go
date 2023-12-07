@@ -16,7 +16,7 @@ type spaceStore struct {
 	children map[ParentID]*btree.BTreeG[*Block]
 	blocks   map[BlockID]*Block
 	parents  map[BlockID]ParentID
-	props    map[BlockID]map[string]interface{}
+	props    map[BlockID][]byte
 	tx       *Transaction
 }
 
@@ -25,7 +25,7 @@ func newSpaceStore() *spaceStore {
 		children: make(map[ParentID]*btree.BTreeG[*Block]),
 		blocks:   make(map[BlockID]*Block),
 		parents:  make(map[BlockID]ParentID),
-		props:    make(map[BlockID]map[string]interface{}),
+		props:    make(map[BlockID][]byte),
 	}
 }
 
@@ -40,7 +40,7 @@ func (ss *spaceStore) AddBlock(block *Block) {
 	children.ReplaceOrInsert(block)
 
 	if block.Props != nil {
-		ss.props[block.ID] = block.Props
+		ss.props[block.ID] = block.Props.Bytes()
 	}
 }
 
@@ -295,9 +295,7 @@ func (ms *MemStore) CreateSpace(space *Space) error {
 
 	ms.spaces[space.ID] = newSpaceStore()
 	spaceBlock := NewBlock(space.ID, RootBlockID, "space")
-	spaceBlock.Props = map[string]interface{}{
-		"name": space.Name,
-	}
+	spaceBlock.Props = NewJsonDoc([]byte(`{"name": "` + space.Name + `"}`))
 
 	err := ms.CreateBlock(&space.ID, spaceBlock)
 	if err != nil {
@@ -341,6 +339,15 @@ func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
 			storeBlock.Index = block.Index
 			storeBlock.Json = block.Json
 			space.AddBlock(storeBlock)
+		}
+
+		for _, block := range blockChange.propSet.ToSlice() {
+			storeBlock, ok := space.blocks[block.ID]
+			if !ok {
+				return errors.New(fmt.Sprintf("prop update block not found, %v", block.ID))
+			}
+			storeBlock.Props = block.Props
+			logrus.Infof("updating props for block %v", block.Props.String())
 		}
 	}
 

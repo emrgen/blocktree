@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
@@ -234,7 +235,8 @@ func newBlockGetCmd() *cobra.Command {
 				return
 			}
 
-			logrus.Infof("Got a block: %v", res.Block)
+			msg, _ := json.Marshal(res.Block)
+			logrus.Infof("Got a block: %v", string(msg))
 		},
 	}
 

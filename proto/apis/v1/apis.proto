@@ -45,7 +45,7 @@ message Op {
   Pointer at = 4;
   optional string object = 5;
   optional bool linked = 6;
-  repeated OpProp props = 7;
+  optional string props = 7;
   optional string patch = 8;
 }
 
@@ -88,6 +88,7 @@ message Block {
   repeated Block children = 4;
   repeated Block linked = 5;
   optional string json = 6;
+  optional string props = 7;
 }
 
 

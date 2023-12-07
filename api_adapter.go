@@ -4,17 +4,28 @@ import (
 	"fmt"
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
 func BlockToProtoV1(b *Block) *v1.Block {
-	jsonContent := b.Json.String()
-	return &v1.Block{
+	block := &v1.Block{
 		Object:   b.Type,
 		BlockId:  b.ID.String(),
 		ParentId: b.ParentID.String(),
-		Json:     &jsonContent,
 	}
+
+	if b.Json != nil {
+		content := b.Json.String()
+		block.Json = &content
+	}
+
+	if b.Props != nil {
+		content := b.Props.String()
+		block.Props = &content
+	}
+
+	return block
 }
 
 func BlockViewToProtoV1(b *BlockView) *v1.Block {
@@ -43,6 +54,13 @@ func BlockViewToProtoV1(b *BlockView) *v1.Block {
 	if b.Json != nil {
 		content := b.Json.String()
 		block.Json = &content
+	}
+
+	logrus.Info(b.ID.String(), b.Props.String())
+
+	if b.Props != nil {
+		content := b.Props.String()
+		block.Props = &content
 	}
 
 	return block
@@ -159,13 +177,7 @@ func OpFromProtoV1(v1op *v1.Op) (*Op, error) {
 	}
 
 	if v1op.Props != nil {
-		op.Props = make([]OpProp, 0)
-		for _, prop := range v1op.Props {
-			op.Props = append(op.Props, OpProp{
-				Path:  prop.Path,
-				Value: prop.Value,
-			})
-		}
+		op.Props = []byte(*v1op.Props)
 	}
 
 	if v1op.Patch != nil {

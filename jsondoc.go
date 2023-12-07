@@ -22,12 +22,18 @@ type JsonDocPatch struct {
 	//Ops []JsonDocPatchOp `json:"ops"`
 }
 
-// NewJsonDoc creates a new JsonDoc.
+// DefaultJsonDoc creates a new JsonDoc.
 // json docs lives in separate table
 // the content structure is kept in blocks table
-func NewJsonDoc() *JsonDoc {
+func DefaultJsonDoc() *JsonDoc {
 	return &JsonDoc{
 		Content: []byte(`{}`),
+	}
+}
+
+func NewJsonDoc(content []byte) *JsonDoc {
+	return &JsonDoc{
+		Content: content,
 	}
 }
 
@@ -85,4 +91,8 @@ func (j *JsonDoc) String() string {
 	}
 
 	return string(j.Content)
+}
+
+func (j *JsonDoc) Bytes() []byte {
+	return j.Content
 }

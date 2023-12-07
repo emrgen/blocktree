@@ -15,10 +15,10 @@ var (
 )
 
 func TestNewJsonDoc(t *testing.T) {
-	jd1 := NewJsonDoc()
+	jd1 := DefaultJsonDoc()
 	jd1.Content = []byte(`{"name":"John Doe"}`)
 
-	jd2 := NewJsonDoc()
+	jd2 := DefaultJsonDoc()
 	jd2.Content = []byte(`{"name":"tommy","age":12}`)
 
 	diff, err := jd1.Diff(jd2)

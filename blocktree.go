@@ -173,7 +173,11 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			if !ok {
 				return nil, errors.New("update block not found")
 			}
-			block.mergeProps(op.Props)
+			err := block.mergeProps(op.Props)
+			if err != nil {
+				return nil, err
+			}
+			logrus.Infof("updated block: %v", block.Props)
 			st.change.addPropSet(block)
 		case OpTypePatch:
 			block, ok := st.block(op.BlockID)
@@ -181,7 +185,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 				return nil, errors.New("patch block not found")
 			}
 			if block.Json == nil {
-				block.Json = NewJsonDoc()
+				block.Json = DefaultJsonDoc()
 			}
 			err := block.Json.Apply(op.Patch)
 			if err != nil {

@@ -478,7 +478,7 @@ type Op struct {
 	Linked  bool     `json:"linked"`
 	BlockID BlockID  `json:"block_id"`
 	At      *Pointer `json:"at"`
-	Props   []OpProp `json:"props"`
+	Props   []byte   `json:"props"`
 	Patch   []byte   `json:"patch"`
 }
 
@@ -496,7 +496,7 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 		return nil, fmt.Errorf("insert op is missing table")
 	}
 
-	jsonDoc := NewJsonDoc()
+	jsonDoc := DefaultJsonDoc()
 	if op.Patch != nil {
 		err := jsonDoc.Apply(op.Patch)
 		if err != nil {

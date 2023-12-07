@@ -35,9 +35,9 @@ type BlockView struct {
 	Type     string
 	ID       uuid.UUID
 	ParentID uuid.UUID
-	Props    BlockProps
 	Children []*BlockView
 	Linked   []*BlockView
+	Props    *JsonDoc
 	Json     *JsonDoc
 	Deleted  bool
 	Erased   bool
@@ -146,7 +146,7 @@ type Block struct {
 	ID          BlockID
 	ParentID    ParentID
 	Index       *FracIndex
-	Props       BlockProps
+	Props       *JsonDoc
 	Json        *JsonDoc
 	Deleted     bool
 	Erased      bool
@@ -163,28 +163,11 @@ func NewBlock(blockID BlockID, parentID ParentID, blockType string) *Block {
 	}
 }
 
-func (b *Block) mergeProps(props []OpProp) {
-	var merge func(map[string]interface{}, []string, interface{}) interface{}
-	merge = func(props map[string]interface{}, keys []string, value interface{}) interface{} {
-		if len(keys) == 0 {
-			return value
-		}
-
-		if props == nil {
-			props = make(map[string]interface{})
-		}
-
-		if _, ok := props[keys[0]]; !ok {
-			props[keys[0]] = make(map[string]interface{})
-		}
-
-		merge(props[keys[0]].(map[string]interface{}), keys[1:], value)
-		return props
+func (b *Block) mergeProps(props []byte) error {
+	if b.Props == nil {
+		b.Props = DefaultJsonDoc()
 	}
-
-	for _, prop := range props {
-		merge(b.Props, prop.Path, prop.Value)
-	}
+	return b.Props.Apply(props)
 }
 
 func (b *Block) Clone() *Block {
