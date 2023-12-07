@@ -17,7 +17,9 @@ enum OpType {
   OP_TYPE_UPDATE = 3;
   OP_TYPE_PATCH = 4;
   OP_TYPE_DELETE = 5;
-  OP_TYPE_ERASE = 6;
+  OP_TYPE_UNDELETE = 6;
+  OP_TYPE_ERASE = 7;
+  OP_TYPE_RESTORE = 8;
 }
 
 enum PointerPosition {

@@ -236,7 +236,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			case op.At.Position == PositionInside:
 				return nil, fmt.Errorf("cannot move inside a block: %v", op)
 			}
-		case op.Type == OpTypeUpdate || op.Type == OpTypePatch || op.Type == OpTypeDelete || op.Type == OpTypeErase:
+		case op.Type == OpTypeUpdate || op.Type == OpTypePatch || op.Type == OpTypeDelete || op.Type == OpTypeErase || op.Type == OpTypeUndelete || op.Type == OpTypeRestore:
 			if ok := stage.contains(op.BlockID); ok {
 				continue
 			}
@@ -438,14 +438,16 @@ type BlockOps struct {
 type OpType string
 
 const (
-	OpTypeInsert OpType = "insert"
-	OpTypeMove   OpType = "move"
-	OpTypeUpdate OpType = "update" // update properties
-	OpTypePatch  OpType = "patch"  // patch json
-	OpTypeLink   OpType = "link"
-	OpTypeUnlink OpType = "unlink"
-	OpTypeDelete OpType = "delete"
-	OpTypeErase  OpType = "erase"
+	OpTypeInsert   OpType = "insert"
+	OpTypeMove     OpType = "move"
+	OpTypeUpdate   OpType = "update" // update properties
+	OpTypePatch    OpType = "patch"  // patch json
+	OpTypeLink     OpType = "link"
+	OpTypeUnlink   OpType = "unlink"
+	OpTypeDelete   OpType = "delete"
+	OpTypeUndelete OpType = "undelete"
+	OpTypeErase    OpType = "erase"
+	OpTypeRestore  OpType = "restore"
 )
 
 type PointerPosition string

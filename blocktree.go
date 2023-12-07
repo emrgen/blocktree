@@ -195,9 +195,16 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 		case OpTypeDelete:
 			block, ok := st.block(op.BlockID)
 			if !ok {
-				return nil, errors.New("erase block not found")
+				return nil, errors.New("delete block not found")
 			}
 			block.Deleted = true
+			st.change.addUpdated(block)
+		case OpTypeUndelete:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("undelete block not found")
+			}
+			block.Deleted = false
 			st.change.addUpdated(block)
 		case OpTypeErase:
 			block, ok := st.block(op.BlockID)
@@ -205,6 +212,13 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 				return nil, errors.New("erase block not found")
 			}
 			block.Erased = true
+			st.change.addUpdated(block)
+		case OpTypeRestore:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("restore block not found")
+			}
+			block.Erased = false
 			st.change.addUpdated(block)
 		}
 	}

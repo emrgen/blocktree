@@ -22,6 +22,7 @@ func newBlockCmd() *cobra.Command {
 	blockCmd.AddCommand(newBlockGetCmd())
 	blockCmd.AddCommand(newBlockUpdateCmd())
 	blockCmd.AddCommand(newBlockDeleteCmd())
+	blockCmd.AddCommand(newBlockUndeleteCmd())
 	blockCmd.AddCommand(newBlockPatchCmd())
 
 	return blockCmd
@@ -208,12 +209,14 @@ func newBlockGetCmd() *cobra.Command {
 		Short: "Get a block data",
 		Run: func(cmd *cobra.Command, args []string) {
 			if spaceID == "" {
-				panic("space ID is required")
+				logrus.Infof("space ID is required")
+				return
 			}
 			spaceID = sanitizeID(spaceID)
 
 			if blockID == "" {
-				panic("block ID is required")
+				logrus.Infof("block ID is required")
+				return
 			}
 			blockID = sanitizeID(blockID)
 
@@ -247,6 +250,7 @@ func newBlockGetCmd() *cobra.Command {
 }
 
 func newBlockUpdateCmd() *cobra.Command {
+	var spaceID, blockID, patch string
 	var updateCmd = &cobra.Command{
 		Use:   "update",
 		Short: "Update a block",
@@ -255,19 +259,83 @@ func newBlockUpdateCmd() *cobra.Command {
 		},
 	}
 
+	updateCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	updateCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
+	updateCmd.Flags().StringVarP(&patch, "patch", "p", "", "Patch")
+
 	return updateCmd
 }
 
 func newBlockDeleteCmd() *cobra.Command {
+	var spaceID, blockID string
 	var deleteCmd = &cobra.Command{
 		Use:   "delete",
-		Short: "Delete a block",
+		Short: "Undelete a block",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("delete called")
+			if spaceID == "" {
+				logrus.Infof("space ID is required")
+				return
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if blockID == "" {
+				logrus.Infof("block ID is required")
+				return
+			}
+			blockID = sanitizeID(blockID)
+
+			conn, err := createConnection(":1000")
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
+
+			client := v1.NewBlocktreeClient(conn)
+			logrus.Infof("Deleting block: %v", blockID)
+			tx := &v1.Transaction{
+				TransactionId: uuid.New().String(),
+				SpaceId:       spaceID,
+				UserId:        uuid.Nil.String(),
+				Ops: []*v1.Op{{
+					Table:   "block",
+					BlockId: blockID,
+					Type:    v1.OpType_OP_TYPE_UNDELETE,
+				}},
+			}
+			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
+				Transactions: []*v1.Transaction{tx},
+			})
+
+			if err != nil {
+				logrus.Infof("Failed to get a block: %v", err)
+				return
+			}
+
+			msg, _ := json.Marshal(res.Transactions)
+			logrus.Infof("Got a block: %v", string(msg))
 		},
 	}
 
+	deleteCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	deleteCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
+
 	return deleteCmd
+}
+
+func newBlockUndeleteCmd() *cobra.Command {
+	var spaceID, blockID string
+	var undeleteCmd = &cobra.Command{
+		Use:   "undelete",
+		Short: "Undelete a block",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("undelete called")
+		},
+	}
+
+	undeleteCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	undeleteCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
+
+	return undeleteCmd
 }
 
 func newBlockPatchCmd() *cobra.Command {

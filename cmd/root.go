@@ -7,7 +7,7 @@ import (
 
 var rootCmd = &cobra.Command{
 	Use:   "blocktree",
-	Short: "Manage a blocktree",
+	Short: "Manage blocktree",
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
 
