@@ -65,7 +65,8 @@ func (ss *spaceStore) RemoveBlock(id BlockID) {
 
 // MemStore is a blocktree store that stores everything in memory.
 type MemStore struct {
-	spaces map[SpaceID]*spaceStore
+	spaces     map[SpaceID]*spaceStore
+	blockSpace map[BlockID]SpaceID
 }
 
 func (ms *MemStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) {
@@ -75,6 +76,15 @@ func (ms *MemStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error)
 	}
 
 	return space.tx, nil
+}
+
+func (ms *MemStore) GetBlockSpaceID(id *BlockID) (*SpaceID, error) {
+	spaceID, ok := ms.blockSpace[*id]
+	if !ok {
+		return nil, errors.New(fmt.Sprintf("space id for block is not found, %v", *id))
+	}
+
+	return &spaceID, nil
 }
 
 func (ms *MemStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
@@ -354,6 +364,7 @@ func (ms *MemStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 	}
 
 	space.AddBlock(block)
+	ms.blockSpace[block.ID] = *spaceID
 
 	return nil
 }

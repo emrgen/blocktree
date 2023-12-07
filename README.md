@@ -15,6 +15,7 @@ A reusable library for block storage
 
 ## Internal Invariants
 
+- all spaces are direct children of the root space(for now)
 - space is a block
 - blocks in a space form a tree (no cycles, no multiple parents, only one block tree per space)
 
@@ -27,12 +28,7 @@ A reusable library for block storage
 - [ ] get block
 - [ ] get all descendants of a block
 - [ ] list blocks by parent
-- [ ] list blocks by space
-- [ ] create user
-- [ ] update user
-- [ ] delete user
-- [ ] get user
-- [ ] list users by account
+- [ ] list page blocks by space
 - [ ] create space
 - [ ] update space
 - [ ] delete space

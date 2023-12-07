@@ -14,6 +14,7 @@ type StoreChange struct {
 
 type BlockStore interface {
 	CreateSpace(space *Space) error
+	GetBlockSpaceID(id *BlockID) (*SpaceID, error)
 	CreateBlock(spaceID *SpaceID, block *Block) error
 	GetBlock(spaceID *SpaceID, id BlockID) (*Block, error)
 	GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)

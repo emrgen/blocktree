@@ -49,21 +49,12 @@ message Op {
   optional string patch = 8;
 }
 
-message CreateSpaceRequest {
-  string space_id = 1 [(validate.rules).string = {uuid: true}];
-  string name = 2;
-}
-
-message CreateSpaceResponse {
-  string space_id = 1 [(validate.rules).string = {uuid: true}];
-}
-
 message Transaction {
   string transaction_id = 1 [(validate.rules).string = {uuid: true}];
   string space_id = 2 [(validate.rules).string = {uuid: true}];
   string user_id = 3 [(validate.rules).string = {uuid: true}];
   repeated Op ops = 4;
-  google.protobuf.Timestamp time = 5;
+//  google.protobuf.Timestamp time = 5;
 }
 
 message ApplyTransactionRequest {
@@ -81,6 +72,59 @@ message ApplyTransactionResponse {
   repeated ApplyTransactionResult transactions = 1;
 }
 
+message CreateSpaceRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string name = 2;
+}
+
+message CreateSpaceResponse {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+}
+
+message Block {
+  string parent_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+  string object = 3;
+  repeated Block children = 4;
+  repeated Block linked = 5;
+}
+
+
+message GetBlockRequest {
+  optional string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockResponse {
+  Block block = 1;
+}
+
+message GetBlockChildrenRequest {
+  optional string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockChildrenResponse {
+  repeated Block blocks = 1;
+}
+
+message GetBlockDescendantsRequest {
+  optional string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockDescendantsResponse {
+  Block block = 1;
+}
+
+message GetBlockPageRequest {
+  string block_id = 1 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockPageResponse {
+  Block page = 1;
+}
+
 service Blocktree {
   rpc ApplyTransactions(ApplyTransactionRequest) returns (ApplyTransactionResponse) {
     option (google.api.http) = {
@@ -95,4 +139,29 @@ service Blocktree {
       body: "*"
     };
   }
+
+  rpc GetBlock(GetBlockRequest) returns (GetBlockResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}"
+    };
+  }
+
+  rpc GetBlockChildren(GetBlockChildrenRequest) returns (GetBlockChildrenResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}/children"
+    };
+  }
+
+  rpc GetBlockDescendants(GetBlockDescendantsRequest) returns (GetBlockDescendantsResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}/descendants"
+    };
+  }
+
+  rpc GetBlockPage(GetBlockPageRequest) returns (GetBlockPageResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}/page"
+    };
+  }
+
 }

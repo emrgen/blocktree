@@ -34,6 +34,11 @@ func (g GormStore) CreateSpace(space *Space) error {
 	return g.db.Create(model).Error
 }
 
+func (g GormStore) GetBlockSpaceID(id *BlockID) (*SpaceID, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (g GormStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 	model := block.toGormBlock()
 	return g.db.Create(model).Error

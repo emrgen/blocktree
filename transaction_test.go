@@ -333,7 +333,7 @@ func TestPatchOp(t *testing.T) {
 
 	_, err = jsonpatch.CreateMergePatch([]byte(`{}`), []byte(`{"name":"John Doe"}`))
 	assert.NoError(t, err)
-	//
+
 	//tx = &Transaction{
 	//	ID:      uuid.New(),
 	//	SpaceID: s1,
