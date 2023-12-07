@@ -54,8 +54,9 @@ func (s *Server) Start() error {
 		}),
 	)
 
+	api := NewApi(s.store)
 	// Register the server with the gRPC server
-	v1.RegisterBlocktreeServer(grpcServer, NewApi(s.store))
+	v1.RegisterBlocktreeServer(grpcServer, NewGrpcApi(api))
 
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	endpoint := "localhost" + grpcPort
