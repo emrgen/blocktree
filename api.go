@@ -89,6 +89,12 @@ func (a *Api) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlo
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		sid, err := uuid.Parse(req.GetSpaceId())
+		if err != nil {
+			return nil, err
+		}
+		spaceID = &sid
 	}
 
 	block, err := a.store.GetBlock(spaceID, blockID)

@@ -376,7 +376,11 @@ func (ms *MemStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
 		return nil, errors.New(fmt.Sprintf("space %v not found", *spaceID))
 	}
 
-	return space.blocks[id].Clone(), nil
+	if block, ok := space.blocks[id]; !ok {
+		return nil, errors.New(fmt.Sprintf("block %v not found", id))
+	} else {
+		return block.Clone(), nil
+	}
 }
 
 func (ms *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error) {

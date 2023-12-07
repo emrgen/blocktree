@@ -111,13 +111,45 @@ func newBlockInsertCmd() *cobra.Command {
 }
 
 func newBlockGetCmd() *cobra.Command {
+	var spaceID, blockID string
 	var getCmd = &cobra.Command{
 		Use:   "get",
 		Short: "Get a block data",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("get called")
+			if spaceID == "" {
+				panic("space ID is required")
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if blockID == "" {
+				panic("block ID is required")
+			}
+			blockID = sanitizeID(blockID)
+
+			conn, err := createConnection(":1000")
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
+
+			client := v1.NewBlocktreeClient(conn)
+			logrus.Infof("Getting a block: %v", blockID)
+			res, err := client.GetBlock(context.Background(), &v1.GetBlockRequest{
+				SpaceId: &spaceID,
+				BlockId: blockID,
+			})
+
+			if err != nil {
+				logrus.Infof("Failed to get a block: %v", err)
+				return
+			}
+
+			logrus.Infof("Got a block: %v", res.Block)
 		},
 	}
+
+	getCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	getCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
 
 	return getCmd
 }
