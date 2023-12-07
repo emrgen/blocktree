@@ -89,6 +89,8 @@ message Block {
   repeated Block linked = 5;
   optional string json = 6;
   optional string props = 7;
+  optional bool deleted = 8;
+  optional bool erased = 9;
 }
 
 

@@ -74,7 +74,7 @@ func BlockViewFromBlocks(rootID BlockID, blocks []*Block) (*BlockView, error) {
 			if _, ok := children[block.ParentID]; !ok {
 				children[block.ParentID] = btree.NewG(10, blockLessFunc)
 			}
-			logrus.Infof("inserting block %v to parent %v", block.ID, block.ParentID)
+			logrus.Debugf("inserting block %v to parent %v", block.ID, block.ParentID)
 			children[block.ParentID].ReplaceOrInsert(block)
 		}
 	}

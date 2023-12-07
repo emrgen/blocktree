@@ -9,6 +9,8 @@ import (
 )
 
 func BlockToProtoV1(b *Block) *v1.Block {
+	logrus.Info(b)
+
 	block := &v1.Block{
 		Object:   b.Type,
 		BlockId:  b.ID.String(),
@@ -23,6 +25,17 @@ func BlockToProtoV1(b *Block) *v1.Block {
 	if b.Props != nil {
 		content := b.Props.String()
 		block.Props = &content
+	}
+
+	if b.Deleted {
+		deleted := b.Deleted
+		logrus.Infof("deleted: %t", deleted)
+		block.Deleted = &deleted
+	}
+
+	if b.Erased {
+		erased := b.Erased
+		block.Erased = &erased
 	}
 
 	return block

@@ -192,7 +192,7 @@ func TestInsertAfterOp(t *testing.T) {
 	}
 	applyTransaction(t, store, tx)
 
-	store.Print(&s1)
+	//store.Print(&s1)
 }
 
 func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
@@ -262,7 +262,16 @@ func TestMoveOp(t *testing.T) {
 
 	applyTransaction(t, store, tx)
 
-	store.Print(&s1)
+	blocks, err := store.GetChildrenBlocks(&s1, b2)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 4, len(blocks), "b1 should have 4 children blocks")
+	assert.Equal(t, b1, blocks[0].ID)
+	assert.Equal(t, b4, blocks[1].ID)
+	assert.Equal(t, b5, blocks[2].ID)
+	assert.Equal(t, b3, blocks[3].ID)
+
+	//store.Print(&s1)
 }
 
 func TestMoveOpWithSimpleCycle(t *testing.T) {

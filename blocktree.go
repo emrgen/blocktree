@@ -76,7 +76,7 @@ func NewStageTable() *StageTable {
 
 func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 	for _, op := range tx.Ops {
-		logrus.Infof("applying op: %s", op.String())
+		logrus.Debugf("applying op: %s", op.String())
 		switch op.Type {
 		case OpTypeInsert:
 			block, ok := st.parking[op.BlockID]

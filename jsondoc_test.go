@@ -26,7 +26,6 @@ func TestNewJsonDoc(t *testing.T) {
 	if err != nil {
 		logrus.Errorf("decode patch error: %v", err)
 	}
-	logrus.Infof("diff: %v", string(diff))
 
 	err = jd1.Apply(diff)
 	assert.NoError(t, err)
