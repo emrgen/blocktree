@@ -1,11 +1,11 @@
-package server
+package cmd
 
 import (
 	"github.com/emrgen/blocktree"
 	"github.com/spf13/cobra"
 )
 
-func NewServeCmd() *cobra.Command {
+func newServeCmd() *cobra.Command {
 	var grpcPort, httpPost int
 	// serveCmd represents the serve command
 	var serveCmd = &cobra.Command{

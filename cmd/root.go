@@ -1,9 +1,6 @@
-package cli
+package cmd
 
 import (
-	"github.com/emrgen/blocktree/cmd/block"
-	"github.com/emrgen/blocktree/cmd/server"
-	"github.com/emrgen/blocktree/cmd/space"
 	"github.com/spf13/cobra"
 	"os"
 )
@@ -15,9 +12,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(server.NewServeCmd())
-	rootCmd.AddCommand(space.NewSpaceCmd())
-	rootCmd.AddCommand(block.NewBlockCmd())
+	rootCmd.AddCommand(newServeCmd())
+	rootCmd.AddCommand(newSpaceCmd())
+	rootCmd.AddCommand(newBlockCmd())
 
 }
 
