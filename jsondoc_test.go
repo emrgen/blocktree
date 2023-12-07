@@ -3,6 +3,7 @@ package blocktree
 import (
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -19,18 +20,18 @@ func TestNewJsonDoc(t *testing.T) {
 
 	jd2 := NewJsonDoc()
 	jd2.Content = []byte(`{"name":"tommy","age":12}`)
-	//
-	//diff, err := jd1.Diff(jd2)
-	//assert.NoError(t, err)
-	//if err != nil {
-	//	logrus.Errorf("decode patch error: %v", err)
-	//}
-	//logrus.Infof("diff: %v", string(diff))
-	//
-	//err = jd1.Apply(diff)
-	//assert.NoError(t, err)
-	//
-	//assert.Equal(t, jd1.Content, jd2.Content)
+
+	diff, err := jd1.Diff(jd2)
+	assert.NoError(t, err)
+	if err != nil {
+		logrus.Errorf("decode patch error: %v", err)
+	}
+	logrus.Infof("diff: %v", string(diff))
+
+	err = jd1.Apply(diff)
+	assert.NoError(t, err)
+
+	assert.Equal(t, jd1.Content, jd2.Content)
 }
 
 func TestJsonArrayPatch(t *testing.T) {
