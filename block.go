@@ -2,7 +2,6 @@ package blocktree
 
 import (
 	"errors"
-	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/btree"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -137,6 +136,8 @@ func (b *BlockView) Print() {
 	logrus.Infof("tree: %v", tree.String())
 }
 
+// Block is a node in the blocktree
+// blocks exist in a space and are linked to other blocks
 type Block struct {
 	Type        string
 	Table       string
@@ -144,7 +145,7 @@ type Block struct {
 	ParentID    ParentID
 	Index       *FracIndex
 	Props       BlockProps
-	Json        []byte
+	Json        *JsonDoc
 	Deleted     bool
 	Erased      bool
 	Linked      bool // linked blocks
@@ -182,15 +183,6 @@ func (b *Block) mergeProps(props []OpProp) {
 	for _, prop := range props {
 		merge(b.Props, prop.Path, prop.Value)
 	}
-}
-
-func (b *Block) mergeJson(patch []byte) error {
-	content, err := jsonpatch.MergePatch(b.Json, patch)
-	if err != nil {
-		return err
-	}
-	b.Json = content
-	return nil
 }
 
 func (b *Block) Clone() *Block {

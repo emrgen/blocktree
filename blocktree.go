@@ -180,22 +180,11 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			if !ok {
 				return nil, errors.New("patch block not found")
 			}
-			err := block.mergeJson(op.Patch)
+			err := block.Json.Apply(op.Patch)
 			if err != nil {
 				return nil, err
 			}
-			st.change.addPropSet(block)
-
-		//case OpTypeLink:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.ParentID = op.ParentID
-		//		stage.updateChange(block, Updated)
-		//	}
-		//case OpTypeUnlink:
-		//	if block, ok := blocks[op.BlockID]; ok {
-		//		block.ParentID = op.ParentID
-		//		stage.updateChange(block, Updated)
-		//	}
+			st.change.addUpdated(block)
 		case OpTypeDelete:
 			block, ok := st.block(op.BlockID)
 			if !ok {

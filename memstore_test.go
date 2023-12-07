@@ -100,4 +100,6 @@ func TestInsertMultipleBlocksInMultipleSpaces(t *testing.T) {
 	assert.NoError(t, err)
 	logrus.Info(blocks)
 	assert.Equal(t, []*Block{bl2}, blocks)
+
+	store.Print(&s1)
 }

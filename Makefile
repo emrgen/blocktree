@@ -1,7 +1,10 @@
 start:
 	@echo "Starting blocktree server"
-	 @go run cmd/cli/main.go serve
+	@go run cmd/cli/main.go serve
 
+init: protoc deps
+	@echo "blocktree setup complete"
+	@echo "to start the server run: make start"
 test:
 	@echo "Running tests..."
 	go test
@@ -19,3 +22,4 @@ clean:
 	@echo "Cleaning..."
 	rm -rf ./bin
 	rm -rf ./vendor
+	rm -rf ./apis

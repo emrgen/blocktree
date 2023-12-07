@@ -1,6 +1,7 @@
 package blocktree
 
 import (
+	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"testing"
@@ -58,6 +59,15 @@ func linkOp(blockID uuid.UUID, object string, refID uuid.UUID) Op {
 			BlockID:  refID,
 			Position: PositionInside,
 		},
+	}
+}
+
+func patchOp(blockID uuid.UUID, patch []byte) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypePatch,
+		BlockID: blockID,
+		Patch:   patch,
 	}
 }
 
@@ -299,4 +309,46 @@ func TestBlockLink(t *testing.T) {
 	})
 
 	//v1.Print()
+}
+
+func TestPatchOp(t *testing.T) {
+	var err error
+	var tx *Transaction
+	store := NewMemStore()
+	err = store.CreateSpace(&Space{
+		ID:   s1,
+		Name: "s1",
+	})
+	assert.NoError(t, err)
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b1, "p1", s1, PositionEnd),
+			insertOp(b2, "p2", s1, PositionEnd),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	_, err = jsonpatch.CreateMergePatch([]byte(`{}`), []byte(`{"name":"John Doe"}`))
+	assert.NoError(t, err)
+	//
+	//tx = &Transaction{
+	//	ID:      uuid.New(),
+	//	SpaceID: s1,
+	//	Ops: []Op{
+	//		patchOp(b1, p1),
+	//	},
+	//}
+	//applyTransaction(t, store, tx)
+
+	//tx = &Transaction{
+	//	ID:      uuid.New(),
+	//	SpaceID: s1,
+	//	Ops:     []Op{},
+	//}
+	//applyTransaction(t, store, tx)
+
+	//store.Print(&s1)
 }

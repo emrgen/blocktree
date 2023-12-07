@@ -11,9 +11,7 @@ type JsonPatch = []byte
 
 // JsonDoc is a json document with incremental updates.
 type JsonDoc struct {
-	ID      JsonDocID              `json:"id"`
-	Content string                 `json:"string"`
-	Props   map[string]interface{} `json:"props"`
+	Content []byte `json:"string"`
 }
 
 type JsonDocPatch struct {
@@ -24,18 +22,18 @@ type JsonDocPatch struct {
 // NewJsonDoc creates a new JsonDoc.
 // json docs lives in separate table
 // the content structure is kept in blocks table
-func NewJsonDoc(id uuid.UUID) *JsonDoc {
+func NewJsonDoc() *JsonDoc {
 	return &JsonDoc{
-		ID: id,
+		Content: []byte(`{}`),
 	}
 }
 
-func (j *JsonDoc) ApplyPatch(patch JsonPatch) error {
-	content, err := jsonpatch.MergePatch([]byte(j.Content), patch)
+func (j *JsonDoc) Apply(patch JsonPatch) error {
+	content, err := jsonpatch.MergePatch(j.Content, patch)
 	if err != nil {
 		return err
 	}
-	j.Content = string(content)
+	j.Content = content
 
 	return nil
 }

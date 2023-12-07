@@ -14,11 +14,11 @@ var (
 )
 
 func TestNewJsonDoc(t *testing.T) {
-	jd1 := NewJsonDoc(d1)
-	jd1.Content = `{"name":"John Doe"}`
+	jd1 := NewJsonDoc()
+	jd1.Content = []byte(`{"name":"John Doe"}`)
 
-	jd2 := NewJsonDoc(d2)
-	jd2.Content = `{"name":"tommy","age":12}`
+	jd2 := NewJsonDoc()
+	jd2.Content = []byte(`{"name":"tommy","age":12}`)
 
 	diff, err := jd1.Diff(jd2)
 	assert.NoError(t, err)
@@ -27,7 +27,7 @@ func TestNewJsonDoc(t *testing.T) {
 	}
 	logrus.Infof("diff: %v", string(diff))
 
-	err = jd1.ApplyPatch(diff)
+	err = jd1.Apply(diff)
 	assert.NoError(t, err)
 
 	assert.Equal(t, jd1.Content, jd2.Content)

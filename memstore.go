@@ -63,6 +63,7 @@ func (ss *spaceStore) RemoveBlock(id BlockID) {
 	delete(ss.blocks, id)
 }
 
+// MemStore is a blocktree store that stores everything in memory.
 type MemStore struct {
 	spaces map[SpaceID]*spaceStore
 }
@@ -455,7 +456,6 @@ func traverseStore(space *spaceStore, parentID *BlockID, tree treeprint.Tree) {
 	}
 
 	children.Ascend(func(item *Block) bool {
-
 		branch := tree.AddBranch(fmt.Sprintf("%v: (%v) %v", item.Type, item.Index.String(), item.ID))
 		traverseStore(space, &item.ID, branch)
 		return true

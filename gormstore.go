@@ -10,64 +10,13 @@ var (
 	_ Store = (*GormStore)(nil)
 )
 
-// GormSpace is a space in gorm database.
-type GormSpace struct {
-	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
-	Name string    `gorm:"not null"`
-}
-
-func (s *GormSpace) toSpace() *Space {
-	//TODO implement me
-	panic("implement me")
-}
-
-func (s *Space) toGormSpace() *GormSpace {
-	//TODO implement me
-	panic("implement me")
-}
-
-type GormBlock struct {
-	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
-	Type string    `gorm:"not null"`
-	// nullable
-	ParentID uuid.UUID `gorm:"type:uuid;not null"`
-	Index    string    `gorm:"not null"`
-	Deleted  bool      `gorm:"not null"`
-	Erased   bool      `gorm:"not null"`
-}
-
-func (b *GormBlock) toBlock() (*Block, error) {
-	block := Block{
-		ID:       b.ID,
-		ParentID: b.ParentID,
-		Type:     b.Type,
-		Deleted:  b.Deleted,
-		Erased:   b.Erased,
-	}
-
-	if b.Index != "" {
-		id := FracIndexFromBytes([]byte(b.Index))
-		block.Index = id
-	} else {
-		return nil, fmt.Errorf("index is empty")
-	}
-
-	return &block, nil
-}
-
-func (b *Block) toGormBlock() *GormBlock {
-	return &GormBlock{
-		ID:       b.ID,
-		Type:     b.Type,
-		ParentID: b.ParentID,
-		Index:    string(b.Index.Bytes()),
-		Deleted:  false,
-		Erased:   false,
-	}
-}
-
+// GormStore is a blocktree store backed by a gorm database.
 type GormStore struct {
 	db *gorm.DB
+}
+
+func NewGormStore(db *gorm.DB) *GormStore {
+	return &GormStore{db: db}
 }
 
 func (g GormStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) {
@@ -78,10 +27,6 @@ func (g GormStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) 
 func (g GormStore) Apply(space *SpaceID, change *StoreChange) error {
 	//TODO implement me
 	panic("implement me")
-}
-
-func NewGormStore(db *gorm.DB) *GormStore {
-	return &GormStore{db: db}
 }
 
 func (g GormStore) CreateSpace(space *Space) error {
@@ -190,4 +135,60 @@ func (g GormStore) PutTransactions(spaceID *SpaceID, tx []*Transaction) error {
 func (g GormStore) ApplyChange(space *SpaceID, change *StoreChange) error {
 	//TODO implement me
 	panic("implement me")
+}
+
+// GormSpace is a space in gorm database.
+type GormSpace struct {
+	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
+	Name string    `gorm:"not null"`
+}
+
+func (s *GormSpace) toSpace() *Space {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (s *Space) toGormSpace() *GormSpace {
+	//TODO implement me
+	panic("implement me")
+}
+
+type GormBlock struct {
+	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
+	Type string    `gorm:"not null"`
+	// nullable
+	ParentID uuid.UUID `gorm:"type:uuid;not null"`
+	Index    string    `gorm:"not null"`
+	Deleted  bool      `gorm:"not null"`
+	Erased   bool      `gorm:"not null"`
+}
+
+func (b *GormBlock) toBlock() (*Block, error) {
+	block := Block{
+		ID:       b.ID,
+		ParentID: b.ParentID,
+		Type:     b.Type,
+		Deleted:  b.Deleted,
+		Erased:   b.Erased,
+	}
+
+	if b.Index != "" {
+		id := FracIndexFromBytes([]byte(b.Index))
+		block.Index = id
+	} else {
+		return nil, fmt.Errorf("index is empty")
+	}
+
+	return &block, nil
+}
+
+func (b *Block) toGormBlock() *GormBlock {
+	return &GormBlock{
+		ID:       b.ID,
+		Type:     b.Type,
+		ParentID: b.ParentID,
+		Index:    string(b.Index.Bytes()),
+		Deleted:  false,
+		Erased:   false,
+	}
 }

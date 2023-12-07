@@ -183,7 +183,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 
 			// load blocks old parent
 			// if the block is inserted in this transaction, it is not in the store yet
-			// its parent can also be inserted in this transaction
+			// its parent can also be inserted in this transaction,
 			// so we need to check the stage first
 			parked, ok := stage.parked(op.BlockID)
 			var parent *Block
@@ -258,7 +258,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			case op.At.Position == PositionInside:
 				return nil, fmt.Errorf("cannot move inside a block: %v", op)
 			}
-		case op.Type == OpTypeUpdate:
+		case op.Type == OpTypeUpdate || op.Type == OpTypePatch:
 			if ok := stage.contains(op.BlockID); ok {
 				continue
 			}
@@ -272,8 +272,6 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			for _, block := range blocks {
 				stage.add(block)
 			}
-		case op.Type == OpTypePatch:
-			panic("not implemented")
 		case op.Type == OpTypeLink:
 			panic("not implemented")
 		case op.Type == OpTypeUnlink:
@@ -582,12 +580,21 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 		return nil, fmt.Errorf("insert op is missing table")
 	}
 
+	jsonDoc := NewJsonDoc()
+	if op.Patch != nil {
+		err := jsonDoc.Apply(op.Patch)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Block{
 		ParentID: parentID,
 		Type:     op.Object,
 		Table:    op.Table,
 		ID:       op.BlockID,
 		Index:    DefaultFracIndex(),
+		Json:     jsonDoc,
 		Deleted:  false,
 		Erased:   false,
 		Linked:   op.Linked,
