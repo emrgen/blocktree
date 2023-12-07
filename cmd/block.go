@@ -43,7 +43,16 @@ func newBlockInsertCmd() *cobra.Command {
 			}
 			refID = sanitizeID(refID)
 
-			if pos == "" {
+			switch pos {
+			case "start":
+				pos = v1.PointerPosition_POINTER_POSITION_START.String()
+			case "end":
+				pos = v1.PointerPosition_POINTER_POSITION_END.String()
+			case "before":
+				pos = v1.PointerPosition_POINTER_POSITION_BEFORE.String()
+			case "after":
+				pos = v1.PointerPosition_POINTER_POSITION_AFTER.String()
+			default:
 				pos = v1.PointerPosition_POINTER_POSITION_END.String()
 			}
 

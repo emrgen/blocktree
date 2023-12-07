@@ -1,0 +1,70 @@
+package cmd
+
+import (
+	"context"
+	v1 "github.com/emrgen/blocktree/apis/v1"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+func newPageCmd() *cobra.Command {
+	var pageCmd = &cobra.Command{
+		Use:   "page",
+		Short: "Manage pages",
+	}
+
+	//pageCmd.AddCommand(newPageInsertCmd())
+	pageCmd.AddCommand(newPageGetCmd())
+	//pageCmd.AddCommand(newPageUpdateCmd())
+	//pageCmd.AddCommand(newPageDeleteCmd())
+
+	return pageCmd
+}
+
+func newPageGetCmd() *cobra.Command {
+	var pageID, spaceID string
+	var getCmd = &cobra.Command{
+		Use:   "get",
+		Short: "Get a page",
+		Run: func(cmd *cobra.Command, args []string) {
+			if spaceID == "" {
+				panic("space ID is required")
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if pageID == "" {
+				panic("page ID is required")
+			}
+			pageID = sanitizeID(pageID)
+
+			conn, err := grpc.Dial(":4000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				logrus.Fatal(err)
+			}
+			defer conn.Close()
+			client := v1.NewBlocktreeClient(conn)
+
+			logrus.Info("Getting a page")
+			req := &v1.GetBlockDescendantsRequest{
+				BlockId: pageID,
+			}
+			if spaceID != "" {
+				req.SpaceId = &spaceID
+			}
+
+			getPage, err := client.GetBlockDescendants(context.Background(), req)
+			if err != nil {
+				logrus.Fatal(err)
+				return
+			}
+			logrus.Info(getPage)
+		},
+	}
+
+	getCmd.Flags().StringVarP(&pageID, "page", "p", "", "Page ID")
+	getCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+
+	return getCmd
+}

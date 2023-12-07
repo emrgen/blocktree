@@ -21,7 +21,7 @@ A reusable library for block storage
 
 ## Progress
 
-- [ ] create block
+- [x] insert block
 - [ ] update block
 - [ ] delete block
 - [ ] move block
@@ -29,7 +29,7 @@ A reusable library for block storage
 - [ ] get all descendants of a block
 - [ ] list blocks by parent
 - [ ] list page blocks by space
-- [ ] create space
+- [x] create space
 - [ ] update space
 - [ ] delete space
 - [ ] get space
