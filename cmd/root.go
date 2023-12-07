@@ -15,6 +15,7 @@ func init() {
 	rootCmd.AddCommand(newServeCmd())
 	rootCmd.AddCommand(newSpaceCmd())
 	rootCmd.AddCommand(newBlockCmd())
+	rootCmd.AddCommand(newPageCmd())
 
 }
 

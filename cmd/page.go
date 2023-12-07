@@ -17,6 +17,7 @@ func newPageCmd() *cobra.Command {
 
 	//pageCmd.AddCommand(newPageInsertCmd())
 	pageCmd.AddCommand(newPageGetCmd())
+	pageCmd.AddCommand(newPageSubPagesCmd())
 	//pageCmd.AddCommand(newPageUpdateCmd())
 	//pageCmd.AddCommand(newPageDeleteCmd())
 
@@ -39,7 +40,7 @@ func newPageGetCmd() *cobra.Command {
 			}
 			pageID = sanitizeID(pageID)
 
-			conn, err := grpc.Dial(":4000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.Dial(":1000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -54,7 +55,55 @@ func newPageGetCmd() *cobra.Command {
 				req.SpaceId = &spaceID
 			}
 
+			logrus.Infof("Getting page %v", req)
+
 			getPage, err := client.GetBlockDescendants(context.Background(), req)
+			if err != nil {
+				logrus.Fatal(err)
+				return
+			}
+			logrus.Info(getPage)
+		},
+	}
+
+	getCmd.Flags().StringVarP(&pageID, "page", "p", "", "Page ID")
+	getCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+
+	return getCmd
+}
+
+func newPageSubPagesCmd() *cobra.Command {
+	var pageID, spaceID string
+	var getCmd = &cobra.Command{
+		Use:   "subpages",
+		Short: "Get a page",
+		Run: func(cmd *cobra.Command, args []string) {
+			if spaceID == "" {
+				panic("space ID is required")
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if pageID == "" {
+				panic("page ID is required")
+			}
+			pageID = sanitizeID(pageID)
+
+			conn, err := grpc.Dial(":1000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			if err != nil {
+				logrus.Fatal(err)
+			}
+			defer conn.Close()
+			client := v1.NewBlocktreeClient(conn)
+
+			logrus.Info("Getting a page")
+			req := &v1.GetBlockChildrenRequest{
+				BlockId: pageID,
+			}
+			if spaceID != "" {
+				req.SpaceId = &spaceID
+			}
+
+			getPage, err := client.GetBlockChildren(context.Background(), req)
 			if err != nil {
 				logrus.Fatal(err)
 				return

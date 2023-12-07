@@ -34,6 +34,8 @@ func BlockViewToProtoV1(b *BlockView) *v1.Block {
 		Object:   b.Type,
 		BlockId:  b.ID.String(),
 		ParentId: b.ParentID.String(),
+		Children: children,
+		Linked:   links,
 	}
 }
 

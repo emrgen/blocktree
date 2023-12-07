@@ -5,6 +5,7 @@ import (
 	"errors"
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 var _ v1.BlocktreeServer = (*Api)(nil)
@@ -99,7 +100,7 @@ func (a *Api) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlo
 	}, nil
 }
 
-func (a *Api) GetChildrenBlocks(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
+func (a *Api) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
 	blockID, _ := uuid.Parse(req.GetBlockId())
 	spaceID := &uuid.Nil
 	var err error
@@ -126,19 +127,31 @@ func (a *Api) GetChildrenBlocks(ctx context.Context, req *v1.GetBlockChildrenReq
 	}, nil
 }
 
-func (a *Api) GetDescendantBlocks(ctx context.Context, req *v1.GetBlockDescendantsRequest) (*v1.GetBlockDescendantsResponse, error) {
-	blockID, _ := uuid.Parse(req.GetBlockId())
-	spaceID := &uuid.Nil
+func (a *Api) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDescendantsRequest) (*v1.GetBlockDescendantsResponse, error) {
+	logrus.Infof("Getting descendant blocks for block: %s", req.GetBlockId())
 	var err error
-	if req.GetSpaceId() == "" {
+	blockID, err := uuid.Parse(req.GetBlockId())
+	if err != nil {
+		return nil, err
+	}
+	spaceID := uuid.Nil
+
+	if req.SpaceId == nil {
 		// get space id from block id
-		spaceID, err = a.store.GetBlockSpaceID(&blockID)
+		sid, err := a.store.GetBlockSpaceID(&blockID)
 		if err != nil {
 			return nil, err
 		}
+		spaceID = *sid
+	} else {
+		sid, err := uuid.Parse(req.GetSpaceId())
+		if err != nil {
+			return nil, err
+		}
+		spaceID = sid
 	}
 
-	blocks, err := a.store.GetDescendantBlocks(spaceID, blockID)
+	blocks, err := a.store.GetDescendantBlocks(&spaceID, blockID)
 	if err != nil {
 		return nil, err
 	}
