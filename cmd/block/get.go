@@ -1,10 +1,8 @@
-/*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-*/
-package cmd
+package block
 
 import (
 	"fmt"
+	"github.com/emrgen/blocktree/cmd/cli"
 
 	"github.com/spf13/cobra"
 )
@@ -19,7 +17,5 @@ var getCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(getCmd)
-
-	// getCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	cli.RootCmd.AddCommand(getCmd)
 }

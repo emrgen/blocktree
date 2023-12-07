@@ -16,6 +16,20 @@ func BlockToProtoV1(b *Block) *v1.Block {
 }
 
 func BlockViewToProtoV1(b *BlockView) *v1.Block {
+	children := make([]*v1.Block, 0)
+	links := make([]*v1.Block, 0)
+	if b.Children != nil {
+		for _, child := range b.Children {
+			children = append(children, BlockViewToProtoV1(child))
+		}
+	}
+
+	if b.Linked != nil {
+		for _, link := range b.Linked {
+			links = append(links, BlockViewToProtoV1(link))
+		}
+	}
+
 	return &v1.Block{
 		Object:   b.Type,
 		BlockId:  b.ID.String(),
