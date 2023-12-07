@@ -233,3 +233,39 @@ func TestMoveBlockBefore(t *testing.T) {
 	assert.Equal(t, b2, blocks[0].ID)
 	assert.Equal(t, b1, blocks[1].ID)
 }
+
+func TestSimpleMoveCycle(t *testing.T) {
+	var err error
+	var tx *Transaction
+
+	api := New(NewMemStore())
+
+	err = api.CreateSpace(s1, "test-1")
+	assert.NoError(t, err)
+
+	// b1 -> b2 -> b3 -> b1
+	tx = createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
+	err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	tx = createTx(s1, insertOp(b2, "p2", b1, PositionEnd))
+	err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	tx = createTx(s1, insertOp(b3, "p3", b2, PositionEnd))
+	err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	tx = createTx(s1, moveOp(b1, b3, PositionStart))
+	err = api.Apply(tx)
+
+	blocks, err := api.GetChildrenBlocks(s1, b3)
+	assert.NoError(t, err)
+	assert.Equal(t, 0, len(blocks))
+
+	tx = createTx(s1, moveOp(b1, b1, PositionStart))
+	err = api.Apply(tx)
+
+	blocks, err = api.GetChildrenBlocks(s1, b1)
+	assert.Equal(t, 1, len(blocks))
+}
