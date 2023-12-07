@@ -6,6 +6,7 @@ import (
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"sort"
 )
 
 var _ v1.BlocktreeServer = (*Api)(nil)
@@ -101,15 +102,26 @@ func (a *Api) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlo
 }
 
 func (a *Api) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
-	blockID, _ := uuid.Parse(req.GetBlockId())
-	spaceID := &uuid.Nil
 	var err error
+	var spaceID *uuid.UUID
+
+	blockID, err := uuid.Parse(req.GetBlockId())
+	if err != nil {
+		return nil, err
+	}
+
 	if req.GetSpaceId() == "" {
 		// get space id from block id
 		spaceID, err = a.store.GetBlockSpaceID(&blockID)
 		if err != nil {
 			return nil, err
 		}
+	} else {
+		sid, err := uuid.Parse(req.GetSpaceId())
+		if err != nil {
+			return nil, err
+		}
+		spaceID = &sid
 	}
 
 	blocks, err := a.store.GetChildrenBlocks(spaceID, blockID)
@@ -117,8 +129,13 @@ func (a *Api) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildrenRequ
 		return nil, err
 	}
 
+	sort.Slice(blocks, func(i, j int) bool {
+		return blocks[i].Index.Compare(blocks[j].Index) < 0
+	})
+
 	v1blocks := make([]*v1.Block, len(blocks))
 	for i, block := range blocks {
+		logrus.Infof("block %v index: %s", block.ID.String(), block.Index.String())
 		v1blocks[i] = BlockToProtoV1(block)
 	}
 

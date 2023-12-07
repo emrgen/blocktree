@@ -240,9 +240,9 @@ func (ms *MemStore) GetParentWithNextBlock(spaceID *SpaceID, id BlockID) ([]*Blo
 		return nil, errors.New(fmt.Sprintf("block siblings not found id: %v", id))
 	}
 
-	children.DescendLessOrEqual(space.blocks[id], func(item *Block) bool {
+	children.AscendGreaterOrEqual(space.blocks[id], func(item *Block) bool {
 		blocks = append(blocks, item.Clone())
-		if len(blocks) >= 2 {
+		if len(blocks) >= 3 {
 			return false
 		}
 		return true
@@ -273,9 +273,9 @@ func (ms *MemStore) GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Blo
 		return nil, errors.New(fmt.Sprintf("block siblings not found id: %v", id))
 	}
 
-	children.AscendGreaterOrEqual(space.blocks[id], func(item *Block) bool {
+	children.DescendLessOrEqual(space.blocks[id], func(item *Block) bool {
 		blocks = append(blocks, item.Clone())
-		if len(blocks) >= 2 {
+		if len(blocks) >= 3 {
 			return false
 		}
 		return true

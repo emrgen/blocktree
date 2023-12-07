@@ -74,7 +74,7 @@ func patchOp(blockID uuid.UUID, patch []byte) Op {
 func createSpace(store *MemStore, spaceID uuid.UUID) error {
 	space := &Space{
 		ID:   spaceID,
-		Name: "",
+		Name: "test-space",
 	}
 	return store.CreateSpace(space)
 }
@@ -151,6 +151,44 @@ func TestInsertOpBetween(t *testing.T) {
 	assert.Equal(t, b1, block.ID)
 
 	//store.Print(&s1)
+}
+
+func TestInsertAfterOp(t *testing.T) {
+	var err error
+	var tx *Transaction
+	store := NewMemStore()
+	err = createSpace(store, s1)
+	assert.NoError(t, err)
+
+	// create a block transaction
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b1, "p1", s1, PositionEnd),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b2, "p2", s1, PositionEnd),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b3, "p3", b1, PositionAfter),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	store.Print(&s1)
 }
 
 func prepareSpace(store *MemStore, spaceID uuid.UUID) error {

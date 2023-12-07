@@ -5,6 +5,7 @@ import (
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/xlab/treeprint"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -62,7 +63,8 @@ func newPageGetCmd() *cobra.Command {
 				logrus.Fatal(err)
 				return
 			}
-			logrus.Info(getPage)
+
+			printBlock(getPage.Block)
 		},
 	}
 
@@ -108,7 +110,15 @@ func newPageSubPagesCmd() *cobra.Command {
 				logrus.Fatal(err)
 				return
 			}
-			logrus.Info(getPage)
+
+			tree := treeprint.New()
+			tree.AddNode(pageID)
+			branch := tree.AddBranch("children")
+			for _, block := range getPage.Blocks {
+				branch.AddNode(block.BlockId)
+			}
+
+			logrus.Info(tree.String())
 		},
 	}
 
