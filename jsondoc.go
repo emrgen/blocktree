@@ -1,6 +1,7 @@
 package blocktree
 
 import (
+	"bytes"
 	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/uuid"
 )
@@ -29,7 +30,11 @@ func NewJsonDoc() *JsonDoc {
 }
 
 func (j *JsonDoc) Apply(patch JsonPatch) error {
-	content, err := jsonpatch.MergePatch(j.Content, patch)
+	oldContent := j.Content
+	if oldContent == nil {
+		oldContent = []byte(`{}`)
+	}
+	content, err := jsonpatch.MergePatch(oldContent, patch)
 	if err != nil {
 		return err
 	}
@@ -40,4 +45,18 @@ func (j *JsonDoc) Apply(patch JsonPatch) error {
 
 func (j *JsonDoc) Diff(other *JsonDoc) (JsonPatch, error) {
 	return jsonpatch.CreateMergePatch([]byte(j.Content), []byte(other.Content))
+}
+
+func (j *JsonDoc) Clone() *JsonDoc {
+	if j == nil {
+		return nil
+	}
+
+	return &JsonDoc{
+		Content: bytes.Clone(j.Content),
+	}
+}
+
+func (j *JsonDoc) String() string {
+	return string(j.Content)
 }

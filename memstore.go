@@ -335,6 +335,7 @@ func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
 
 			storeBlock.ParentID = block.ParentID
 			storeBlock.Index = block.Index
+			storeBlock.Json = block.Json
 			space.AddBlock(storeBlock)
 		}
 	}

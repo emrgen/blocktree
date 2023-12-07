@@ -369,24 +369,35 @@ func TestPatchOp(t *testing.T) {
 	}
 	applyTransaction(t, store, tx)
 
-	_, err = jsonpatch.CreateMergePatch([]byte(`{}`), []byte(`{"name":"John Doe"}`))
+	p1, err := jsonpatch.CreateMergePatch([]byte(`{}`), []byte(`{"name":"John Doe"}`))
 	assert.NoError(t, err)
 
-	//tx = &Transaction{
-	//	ID:      uuid.New(),
-	//	SpaceID: s1,
-	//	Ops: []Op{
-	//		patchOp(b1, p1),
-	//	},
-	//}
-	//applyTransaction(t, store, tx)
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			patchOp(b1, p1),
+		},
+	}
+	applyTransaction(t, store, tx)
 
-	//tx = &Transaction{
-	//	ID:      uuid.New(),
-	//	SpaceID: s1,
-	//	Ops:     []Op{},
-	//}
-	//applyTransaction(t, store, tx)
+	block, err := store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"name":"John Doe"}`, string(block.Json.Content))
+
+	patch := []byte(`{"name":"John Doe","age":30}`)
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			patchOp(b1, patch),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	block, err = store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+	assert.Equal(t, `{"name":"John Doe","age":30}`, string(block.Json.Content))
 
 	//store.Print(&s1)
 }

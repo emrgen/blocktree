@@ -188,3 +188,8 @@ func (a *Api) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDescendan
 		Block: BlockViewToProtoV1(view),
 	}, nil
 }
+
+func (a *Api) GetBlockPage(ctx context.Context, request *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
+	//TODO implement me
+	panic("implement me")
+}

@@ -87,6 +87,7 @@ message Block {
   string object = 3;
   repeated Block children = 4;
   repeated Block linked = 5;
+  optional string json = 6;
 }
 
 

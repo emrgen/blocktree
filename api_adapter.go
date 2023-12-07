@@ -30,13 +30,20 @@ func BlockViewToProtoV1(b *BlockView) *v1.Block {
 		}
 	}
 
-	return &v1.Block{
+	block := &v1.Block{
 		Object:   b.Type,
 		BlockId:  b.ID.String(),
 		ParentId: b.ParentID.String(),
 		Children: children,
 		Linked:   links,
 	}
+
+	if b.Json != nil {
+		content := b.Json.String()
+		block.Json = &content
+	}
+
+	return block
 }
 
 func TransactionFromProtoV1(txv1 *v1.Transaction) (*Transaction, error) {
@@ -94,6 +101,8 @@ func OpFromProtoV1(v1op *v1.Op) (*Op, error) {
 		opType = "delete"
 	case v1.OpType_OP_TYPE_ERASE:
 		opType = "erase"
+	case v1.OpType_OP_TYPE_PATCH:
+		opType = "patch"
 	}
 
 	if opType == "" {

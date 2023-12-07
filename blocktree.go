@@ -180,6 +180,9 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 			if !ok {
 				return nil, errors.New("patch block not found")
 			}
+			if block.Json == nil {
+				block.Json = NewJsonDoc()
+			}
 			err := block.Json.Apply(op.Patch)
 			if err != nil {
 				return nil, err

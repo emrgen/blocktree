@@ -19,6 +19,7 @@ func newBlockCmd() *cobra.Command {
 	blockCmd.AddCommand(newBlockGetCmd())
 	blockCmd.AddCommand(newBlockUpdateCmd())
 	blockCmd.AddCommand(newBlockDeleteCmd())
+	blockCmd.AddCommand(newBlockPatchCmd())
 
 	return blockCmd
 }
@@ -176,4 +177,66 @@ func newBlockDeleteCmd() *cobra.Command {
 	}
 
 	return deleteCmd
+}
+
+func newBlockPatchCmd() *cobra.Command {
+	var spaceID, blockID, patch string
+	var patchCmd = &cobra.Command{
+		Use:   "patch",
+		Short: "Patch a block",
+		Run: func(cmd *cobra.Command, args []string) {
+			if spaceID == "" {
+				logrus.Infof("space ID is required")
+				return
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if blockID == "" {
+				logrus.Infof("block ID is required")
+				return
+			}
+			blockID = sanitizeID(blockID)
+
+			if patch == "" {
+				logrus.Infof("patch is required")
+				return
+			}
+
+			conn, err := createConnection(":1000")
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
+
+			client := v1.NewBlocktreeClient(conn)
+			logrus.Infof("Patching a block: %v", blockID)
+			tx := v1.Transaction{
+				TransactionId: uuid.New().String(),
+				SpaceId:       spaceID,
+				UserId:        uuid.Nil.String(),
+				Ops: []*v1.Op{{
+					Table:   "block",
+					BlockId: blockID,
+					Type:    v1.OpType_OP_TYPE_PATCH,
+					Patch:   &patch,
+				}},
+			}
+			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
+				Transactions: []*v1.Transaction{&tx},
+			})
+
+			if err != nil {
+				logrus.Infof("Failed to patch a block: %v", err)
+				return
+			}
+
+			logrus.Infof("Patched a block: %v", res.Transactions)
+		},
+	}
+
+	patchCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	patchCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
+	patchCmd.Flags().StringVarP(&patch, "patch", "p", "", "Patch")
+
+	return patchCmd
 }

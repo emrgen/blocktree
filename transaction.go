@@ -256,7 +256,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 			panic("not implemented")
 		case op.Type == OpTypeUnlink:
 			panic("not implemented")
-		case op.Type == OpTypeDelete || op.Type == OpTypeErase:
+		case op.Type == OpTypeDelete || op.Type == OpTypeErase || op.Type == OpTypePatch:
 			if ok := stage.contains(op.BlockID); ok {
 				continue
 			}

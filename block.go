@@ -38,6 +38,7 @@ type BlockView struct {
 	Props    BlockProps
 	Children []*BlockView
 	Linked   []*BlockView
+	Json     *JsonDoc
 	Deleted  bool
 	Erased   bool
 }
@@ -48,6 +49,7 @@ func BlockViewFromBlock(block *Block) *BlockView {
 		ID:       block.ID,
 		ParentID: block.ParentID,
 		Props:    block.Props,
+		Json:     block.Json,
 		Deleted:  block.Deleted,
 		Erased:   block.Erased,
 	}
@@ -192,6 +194,7 @@ func (b *Block) Clone() *Block {
 		ParentID: b.ParentID,
 		Index:    b.Index.Clone(),
 		Props:    b.Props,
+		Json:     b.Json.Clone(),
 		Deleted:  b.Deleted,
 		Erased:   b.Erased,
 		Linked:   b.Linked,
