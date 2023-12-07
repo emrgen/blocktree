@@ -32,7 +32,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 	//if err != nil {
 	//	return nil, err
 	//}
-	//if transaction != nil && transaction.Counter >= tx.Counter {
+	//if transaction != nil && transaction.Version >= tx.Version {
 	//	return nil, fmt.Errorf("transaction already applied")
 	//}
 

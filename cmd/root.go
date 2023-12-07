@@ -16,7 +16,6 @@ func init() {
 	rootCmd.AddCommand(newSpaceCmd())
 	rootCmd.AddCommand(newBlockCmd())
 	rootCmd.AddCommand(newPageCmd())
-
 }
 
 func Execute() {

@@ -92,7 +92,7 @@ func newBlockInsertCmd() *cobra.Command {
 
 			client := v1.NewBlocktreeClient(conn)
 
-			logrus.Infof("Creating a block: %v", tx)
+			logrus.Infof("Inserting block: %v", blockID)
 			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
 				Transactions: []*v1.Transaction{tx},
 			})
@@ -179,7 +179,7 @@ func newBlockMoveCmd() *cobra.Command {
 
 			client := v1.NewBlocktreeClient(conn)
 
-			logrus.Infof("Creating a block: %v", tx)
+			logrus.Infof("Moving block: %v", blockID)
 			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
 				Transactions: []*v1.Transaction{tx},
 			})

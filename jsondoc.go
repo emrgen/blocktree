@@ -15,6 +15,7 @@ type JsonPatch = []byte
 // JsonDoc is a json document with incremental updates.
 type JsonDoc struct {
 	Content []byte `json:"string"`
+	// monotonic counter to track the number of updates
 }
 
 type JsonDocPatch struct {

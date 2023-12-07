@@ -48,7 +48,6 @@ func newPageGetCmd() *cobra.Command {
 			defer conn.Close()
 			client := v1.NewBlocktreeClient(conn)
 
-			logrus.Info("Getting a page")
 			req := &v1.GetBlockDescendantsRequest{
 				BlockId: pageID,
 			}
