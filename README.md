@@ -25,11 +25,11 @@ A reusable library for block storage
 - [ ] update block
 - [x] patch block
 - [ ] delete block
-- [ ] move block
+- [x] move block
 - [x] get block
-- [ ] get all descendants of a block
-- [ ] list blocks by parent
-- [ ] list page blocks by space
+- [x] get all descendants of a block
+- [x] list blocks by parent
+- [x] list page blocks by space
 - [x] create space
 - [ ] update space
 - [ ] delete space

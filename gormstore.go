@@ -2,6 +2,7 @@ package blocktree
 
 import (
 	"fmt"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -149,19 +150,22 @@ type GormSpace struct {
 }
 
 func (s *GormSpace) toSpace() *Space {
-	//TODO implement me
-	panic("implement me")
+	return &Space{
+		ID:   s.ID,
+		Name: s.Name,
+	}
 }
 
 func (s *Space) toGormSpace() *GormSpace {
-	//TODO implement me
-	panic("implement me")
+	return &GormSpace{
+		ID:   s.ID,
+		Name: s.Name,
+	}
 }
 
 type GormBlock struct {
-	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
-	Type string    `gorm:"not null"`
-	// nullable
+	ID       uuid.UUID `gorm:"type:uuid;primary_key"`
+	Type     string    `gorm:"not null"`
 	ParentID uuid.UUID `gorm:"type:uuid;not null"`
 	Index    string    `gorm:"not null"`
 	Deleted  bool      `gorm:"not null"`

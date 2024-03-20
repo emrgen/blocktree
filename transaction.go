@@ -3,8 +3,9 @@ package blocktree
 import (
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
 )
@@ -65,7 +66,7 @@ func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
 		stage.add(block)
 	}
 
-	// load all relevant blocks into the stage
+	// check and load relevant blocks from the store to the stage
 	for _, op := range tx.Ops {
 		switch {
 		case op.Type == OpTypeInsert:
