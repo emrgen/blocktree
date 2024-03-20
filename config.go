@@ -15,8 +15,8 @@ type Config struct {
 
 func DefaultConfig() *Config {
 	return &Config{
-		GrpcPort: 1000,
-		HttpPort: 1001,
+		GrpcPort: 4100,
+		HttpPort: 4101,
 	}
 }
 

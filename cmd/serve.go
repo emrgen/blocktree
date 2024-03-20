@@ -17,11 +17,11 @@ func newServeCmd() *cobra.Command {
 			}
 
 			if grpcPort < 1 || grpcPort > 65535 {
-				grpcPort = 1000
+				grpcPort = 4100
 			}
 
 			if httpPost < 1 || httpPost > 65535 {
-				httpPost = 1001
+				httpPost = 4101
 			}
 
 			server := blocktree.NewServer(blocktree.NewMemStore(), &blocktree.Config{
@@ -36,8 +36,8 @@ func newServeCmd() *cobra.Command {
 		},
 	}
 
-	serveCmd.Flags().IntVarP(&grpcPort, "gport", "g", 1000, "gRPC port")
-	serveCmd.Flags().IntVarP(&httpPost, "hport", "p", 1001, "HTTP port")
+	serveCmd.Flags().IntVarP(&grpcPort, "gport", "g", 4100, "gRPC port")
+	serveCmd.Flags().IntVarP(&httpPost, "hport", "p", 4101, "HTTP port")
 
 	return serveCmd
 }

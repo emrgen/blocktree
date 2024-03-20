@@ -130,9 +130,7 @@ func (f *FracIndex) Clone() *FracIndex {
 
 func (f *FracIndex) String() string {
 	nums := make([]uint8, len(f.bytes))
-	for i, b := range f.bytes {
-		nums[i] = b
-	}
+	copy(nums, f.bytes)
 
 	return fmt.Sprintf("FracIndex(%v)", nums)
 }

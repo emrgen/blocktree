@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -34,7 +35,7 @@ func newSpaceInsertCmd() *cobra.Command {
 				panic("name is required")
 			}
 
-			conn, err := createConnection(":1000")
+			conn, err := createConnection(":4100")
 			if err != nil {
 				panic(err)
 			}

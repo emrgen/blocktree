@@ -1,3 +1,5 @@
+CLIENT_VERSION = $(shell cat ./version | grep  "client-version=*" | awk -F"=" '{ print $$2 }')
+
 start:
 	@echo "Starting blocktree server"
 	@go run cmd/cli/main.go serve
@@ -28,3 +30,12 @@ clean:
 	rm -rf ./bin
 	rm -rf ./vendor
 	rm -rf ./apis
+
+generate-ts-client:
+	@echo "Generating typescript client..."
+	@openapi-generator-cli generate -i ./apis/v1/apis.swagger.json \
+		-g typescript-axios -o ./client/blocktree-ts-client \
+		--additional-properties=npmName=@emrgen/blocktree-client,npmVersion=$(CLIENT_VERSION),useSingleRequestParameter=true \
+        --type-mappings=string=String
+
+client: protoc generate-ts-client

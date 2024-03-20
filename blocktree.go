@@ -3,6 +3,7 @@ package blocktree
 import (
 	"errors"
 	"fmt"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/google/btree"
 	"github.com/google/uuid"
@@ -128,11 +129,11 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 		case OpTypeMove:
 			block, ok := st.block(op.BlockID)
 			if !ok {
-				return nil, errors.New(fmt.Sprintf("move block not found: %v", op.BlockID))
+				return nil, fmt.Errorf("move block not found: %v", op.BlockID)
 			}
 			parentId := block.ParentID
 			if parentId == uuid.Nil {
-				return nil, errors.New(fmt.Sprintf("old parent id is nil for move block: %v", op.BlockID))
+				return nil, fmt.Errorf("old parent id is nil for move block: %v", op.BlockID)
 			}
 			parent, ok := st.block(parentId)
 			//logrus.Infof("existing blocks: %v", st.existingIDs())
@@ -364,10 +365,7 @@ func (st *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
 		if tree.Len() > 0 {
 			tree.AscendGreaterOrEqual(block, func(b *Block) bool {
 				blocks = append(blocks, b)
-				if len(blocks) == 2 {
-					return false
-				}
-				return true
+				return len(blocks) != 2
 			})
 		}
 	}
@@ -386,10 +384,7 @@ func (st *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 		if tree.Len() > 0 {
 			tree.DescendLessOrEqual(block, func(b *Block) bool {
 				blocks = append(blocks, b)
-				if len(blocks) == 2 {
-					return false
-				}
-				return true
+				return len(blocks) != 2
 			})
 		}
 	}
@@ -448,10 +443,7 @@ func (st *StageTable) contains(id BlockID) bool {
 		return true
 	}
 	_, ok = st.parking[id]
-	if ok {
-		return true
-	}
-	return false
+	return ok
 }
 
 // BlockChange tracks block changes in a transaction

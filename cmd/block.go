@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -84,10 +85,9 @@ func newBlockInsertCmd() *cobra.Command {
 				}},
 			}
 
-			conn, err := createConnection(":1000")
+			conn, err := createConnection(":4100")
 			if err != nil {
 				panic(err)
-				return
 			}
 			defer conn.Close()
 
@@ -171,10 +171,9 @@ func newBlockMoveCmd() *cobra.Command {
 				}},
 			}
 
-			conn, err := createConnection(":1000")
+			conn, err := createConnection(":4100")
 			if err != nil {
 				panic(err)
-				return
 			}
 			defer conn.Close()
 
@@ -220,7 +219,7 @@ func newBlockGetCmd() *cobra.Command {
 			}
 			blockID = sanitizeID(blockID)
 
-			conn, err := createConnection(":1000")
+			conn, err := createConnection(":4100")
 			if err != nil {
 				panic(err)
 			}
@@ -284,7 +283,7 @@ func newBlockDeleteCmd() *cobra.Command {
 			}
 			blockID = sanitizeID(blockID)
 
-			conn, err := createConnection(":1000")
+			conn, err := createConnection(":4100")
 			if err != nil {
 				panic(err)
 			}
@@ -361,7 +360,7 @@ func newBlockPatchCmd() *cobra.Command {
 				return
 			}
 
-			conn, err := createConnection(":1000")
+			conn, err := createConnection(":4100")
 			if err != nil {
 				panic(err)
 			}

@@ -1,17 +1,17 @@
 package blocktree
 
 import (
+	"testing"
+
 	jsonpatch "github.com/evanphx/json-patch/v5"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var (
-	d1, _ = uuid.Parse("00000000-0000-0000-0000-000000000001")
-	d2, _ = uuid.Parse("00000000-0000-0000-0000-000000000002")
-	d3, _ = uuid.Parse("00000000-0000-0000-0000-000000000003")
+// d1, _ = uuid.Parse("00000000-0000-0000-0000-000000000001")
+// d2, _ = uuid.Parse("00000000-0000-0000-0000-000000000002")
+// d3, _ = uuid.Parse("00000000-0000-0000-0000-000000000003")
 )
 
 func TestNewJsonDoc(t *testing.T) {

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -41,7 +42,7 @@ func newPageGetCmd() *cobra.Command {
 			}
 			pageID = sanitizeID(pageID)
 
-			conn, err := grpc.Dial(":1000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.Dial(":4100", grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				logrus.Fatal(err)
 			}
@@ -89,7 +90,7 @@ func newPageSubPagesCmd() *cobra.Command {
 			}
 			pageID = sanitizeID(pageID)
 
-			conn, err := grpc.Dial(":1000", grpc.WithTransportCredentials(insecure.NewCredentials()))
+			conn, err := grpc.Dial(":4100", grpc.WithTransportCredentials(insecure.NewCredentials()))
 			if err != nil {
 				logrus.Fatal(err)
 			}

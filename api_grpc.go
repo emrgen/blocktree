@@ -2,6 +2,7 @@ package blocktree
 
 import (
 	"context"
+
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -62,7 +63,7 @@ func (a *grpcApi) CreateSpace(ctx context.Context, req *v1.CreateSpaceRequest) (
 
 func (a *grpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.GetBlockResponse, error) {
 	blockID, _ := uuid.Parse(req.GetBlockId())
-	spaceID := &uuid.Nil
+	var spaceID *uuid.UUID
 	var err error
 	if req.GetSpaceId() == "" {
 		// get space id from block id
@@ -136,7 +137,7 @@ func (a *grpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDesce
 	if err != nil {
 		return nil, err
 	}
-	spaceID := uuid.Nil
+	var spaceID uuid.UUID
 
 	if req.SpaceId == nil {
 		// get space id from block id

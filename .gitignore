@@ -57,3 +57,5 @@ dist/
 # Misc
 .DS_Store
 *.pyc
+
+client

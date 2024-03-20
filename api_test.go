@@ -1,8 +1,9 @@
 package blocktree
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestCreateSpace(t *testing.T) {
@@ -258,14 +259,18 @@ func TestSimpleMoveCycle(t *testing.T) {
 
 	tx = createTx(s1, moveOp(b1, b3, PositionStart))
 	err = api.Apply(tx)
+	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, b3)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(blocks))
 
+	// should be a cycle
 	tx = createTx(s1, moveOp(b1, b1, PositionStart))
 	err = api.Apply(tx)
+	assert.Error(t, err)
 
 	blocks, err = api.GetChildrenBlocks(s1, b1)
+	assert.NoError(t, err)
 	assert.Equal(t, 1, len(blocks))
 }
