@@ -10,6 +10,8 @@ import (
 
 var _ v1.BlocktreeServer = (*grpcApi)(nil)
 
+// grpcApi is the gRPC server implementation for the blocktree service
+// It implements the v1.BlocktreeServer interface
 type grpcApi struct {
 	v1.BlocktreeServer
 	api *Api
@@ -27,7 +29,7 @@ func (a *grpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactio
 	transactions := make([]*Transaction, 0, len(txs))
 	for _, tx := range txs {
 		//logrus.Info("Parsing transaction: ", tx)
-		transaction, err := TransactionFromProtoV1(tx)
+		transaction, err := transactionFromProtoV1(tx)
 		if err != nil {
 			return nil, err
 		}
@@ -87,7 +89,7 @@ func (a *grpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.Ge
 	logrus.Infof("block %v", block)
 
 	return &v1.GetBlockResponse{
-		Block: BlockToProtoV1(block),
+		Block: blockToProtoV1(block),
 	}, nil
 }
 
@@ -122,7 +124,7 @@ func (a *grpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildren
 	v1blocks := make([]*v1.Block, len(blocks))
 	for i, block := range blocks {
 		logrus.Infof("block %v index: %s", block.ID.String(), block.Index.String())
-		v1blocks[i] = BlockToProtoV1(block)
+		v1blocks[i] = blockToProtoV1(block)
 	}
 
 	return &v1.GetBlockChildrenResponse{
@@ -159,7 +161,7 @@ func (a *grpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDesce
 		return nil, err
 	}
 
-	view, err := BlockViewFromBlocks(blockID, blocks)
+	view, err := blockViewFromBlocks(blockID, blocks)
 	if err != nil {
 		return nil, err
 	}

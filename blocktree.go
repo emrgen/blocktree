@@ -11,35 +11,35 @@ import (
 	"github.com/xlab/treeprint"
 )
 
-// BlockTree is a staging ground for loading block from db
-type BlockTree struct {
+// blockTree is a staging ground for loading block from db
+type blockTree struct {
 	Root     *Block
 	Children map[ParentID]*btree.BTreeG[*Block]
 }
 
-// NewBlockTree creates a block tree from root Block
-func NewBlockTree(root *Block) *BlockTree {
+// newBlockTree creates a block tree from root Block
+func newBlockTree(root *Block) *blockTree {
 	tree := make(map[ParentID]*btree.BTreeG[*Block])
 	tree[root.ID] = btree.NewG(10, blockLessFunc)
-	return &BlockTree{
+	return &blockTree{
 		Root:     root,
 		Children: tree,
 	}
 }
 
 // AddEdge add a parent child connection
-func (bt *BlockTree) AddEdge(parent, child *Block) {
+func (bt *blockTree) AddEdge(parent, child *Block) {
 	if tree, ok := bt.Children[parent.ID]; ok {
 		tree.ReplaceOrInsert(child)
 	}
 }
 
-func (bt *BlockTree) View() *BlockView {
+func (bt *blockTree) View() *BlockView {
 	return bt.view(bt.Root)
 }
 
-func (bt *BlockTree) view(parent *Block) *BlockView {
-	blockView := &BlockView{
+func (bt *blockTree) view(parent *Block) *BlockView {
+	view := &BlockView{
 		Type:     parent.Type,
 		ID:       parent.ID,
 		ParentID: parent.ParentID,
@@ -47,27 +47,27 @@ func (bt *BlockTree) view(parent *Block) *BlockView {
 	}
 
 	if tree, ok := bt.Children[parent.ID]; ok {
-		blockView.Children = make([]*BlockView, 0, tree.Len())
+		view.Children = make([]*BlockView, 0, tree.Len())
 		tree.Ascend(func(b *Block) bool {
-			blockView.Children = append(blockView.Children, bt.view(b))
+			view.Children = append(view.Children, bt.view(b))
 			return true
 		})
 	}
 
-	return blockView
+	return view
 }
 
-// StageTable is a staging ground for block transaction
-type StageTable struct {
+// stageTable is a staging ground for block transaction
+type stageTable struct {
 	children map[ParentID]*btree.BTreeG[*Block]
 	blocks   map[BlockID]*Block
-	change   BlockChange
+	change   blockChange
 	parking  map[BlockID]*Block
 }
 
-// NewStageTable creates a new StageTable
-func NewStageTable() *StageTable {
-	return &StageTable{
+// NewStageTable creates a new stageTable
+func NewStageTable() *stageTable {
+	return &stageTable{
 		children: make(map[ParentID]*btree.BTreeG[*Block]),
 		blocks:   make(map[BlockID]*Block),
 		change:   newBlockChange(),
@@ -75,7 +75,7 @@ func NewStageTable() *StageTable {
 	}
 }
 
-func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
+func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 	for _, op := range tx.Ops {
 		logrus.Debugf("applying op: %s", op.String())
 		switch op.Type {
@@ -227,7 +227,7 @@ func (st *StageTable) Apply(tx *Transaction) (*BlockChange, error) {
 	return &st.change, nil
 }
 
-func (st *StageTable) existingIDs() []BlockID {
+func (st *stageTable) existingIDs() []BlockID {
 	ids := make([]BlockID, 0, len(st.blocks))
 	for id := range st.blocks {
 		ids = append(ids, id)
@@ -235,7 +235,7 @@ func (st *StageTable) existingIDs() []BlockID {
 	return ids
 }
 
-func (st *StageTable) paceAtStart(block *Block, parentID BlockID, action BlockChangeType) {
+func (st *stageTable) paceAtStart(block *Block, parentID BlockID, action blockChangeType) {
 	firstChild, ok := st.firstChild(parentID)
 	if ok {
 		block.Index = NewBefore(firstChild.Index)
@@ -246,7 +246,7 @@ func (st *StageTable) paceAtStart(block *Block, parentID BlockID, action BlockCh
 	st.updateChange(block, action)
 }
 
-func (st *StageTable) paceAtEnd(block *Block, parentID BlockID, action BlockChangeType) {
+func (st *stageTable) paceAtEnd(block *Block, parentID BlockID, action blockChangeType) {
 	lastChild, ok := st.lastChild(parentID)
 	if ok {
 		block.Index = NewAfter(lastChild.Index)
@@ -257,7 +257,7 @@ func (st *StageTable) paceAtEnd(block *Block, parentID BlockID, action BlockChan
 	st.updateChange(block, action)
 }
 
-func (st *StageTable) placeBefore(block *Block, nextID BlockID, action BlockChangeType) error {
+func (st *stageTable) placeBefore(block *Block, nextID BlockID, action blockChangeType) error {
 	sibling, err := st.withPrevSibling(nextID)
 	if err != nil {
 		return err
@@ -284,7 +284,7 @@ func (st *StageTable) placeBefore(block *Block, nextID BlockID, action BlockChan
 	return nil
 }
 
-func (st *StageTable) placeAfter(block *Block, prevID BlockID, action BlockChangeType) error {
+func (st *stageTable) placeAfter(block *Block, prevID BlockID, action blockChangeType) error {
 	sibling, err := st.withNextSibling(prevID)
 	if err != nil {
 		return err
@@ -311,11 +311,11 @@ func (st *StageTable) placeAfter(block *Block, prevID BlockID, action BlockChang
 	return nil
 }
 
-func (st *StageTable) placeInside(block *Block, parentID BlockID, action BlockChangeType) {
+func (st *stageTable) placeInside(block *Block, parentID BlockID, action blockChangeType) {
 	st.updateChange(block, action)
 }
 
-func (st *StageTable) updateChange(block *Block, changeType BlockChangeType) {
+func (st *stageTable) updateChange(block *Block, changeType blockChangeType) {
 	switch changeType {
 	case Inserted:
 		st.change.inserted.Add(block)
@@ -326,7 +326,7 @@ func (st *StageTable) updateChange(block *Block, changeType BlockChangeType) {
 	}
 }
 
-func (st *StageTable) firstChild(parent BlockID) (*Block, bool) {
+func (st *stageTable) firstChild(parent BlockID) (*Block, bool) {
 	if tree, ok := st.children[parent]; ok {
 		if tree.Len() > 0 {
 			var first *Block
@@ -340,7 +340,7 @@ func (st *StageTable) firstChild(parent BlockID) (*Block, bool) {
 	return nil, false
 }
 
-func (st *StageTable) lastChild(parent BlockID) (*Block, bool) {
+func (st *stageTable) lastChild(parent BlockID) (*Block, bool) {
 	if tree, ok := st.children[parent]; ok {
 		if tree.Len() > 0 {
 			var last *Block
@@ -355,7 +355,7 @@ func (st *StageTable) lastChild(parent BlockID) (*Block, bool) {
 }
 
 // withNextSibling returns [target, Optional[next]] for a block
-func (st *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
+func (st *stageTable) withNextSibling(id BlockID) ([]*Block, error) {
 	blocks := make([]*Block, 0, 2)
 	block, ok := st.block(id)
 	if !ok {
@@ -374,7 +374,7 @@ func (st *StageTable) withNextSibling(id BlockID) ([]*Block, error) {
 }
 
 // withPrevSibling returns [target, Optional[prev]] for a block
-func (st *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
+func (st *stageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 	blocks := make([]*Block, 0, 2)
 	block, ok := st.block(id)
 	if !ok {
@@ -393,7 +393,7 @@ func (st *StageTable) withPrevSibling(id BlockID) ([]*Block, error) {
 }
 
 // Add adds a block to the table
-func (st *StageTable) add(block *Block) {
+func (st *stageTable) add(block *Block) {
 	st.blocks[block.ID] = block
 	if tree, ok := st.children[block.ParentID]; ok {
 		tree.ReplaceOrInsert(block)
@@ -404,14 +404,14 @@ func (st *StageTable) add(block *Block) {
 }
 
 // Remove removes a block from the table
-func (st *StageTable) remove(block *Block) {
+func (st *stageTable) remove(block *Block) {
 	delete(st.blocks, block.ID)
 	if tree, ok := st.children[block.ParentID]; ok {
 		tree.Delete(block)
 	}
 }
 
-func (st *StageTable) block(id BlockID) (*Block, bool) {
+func (st *stageTable) block(id BlockID) (*Block, bool) {
 	if _, ok := st.blocks[id]; !ok {
 		return nil, false
 	}
@@ -419,12 +419,12 @@ func (st *StageTable) block(id BlockID) (*Block, bool) {
 }
 
 // Park a block in the table
-func (st *StageTable) park(block *Block) {
+func (st *stageTable) park(block *Block) {
 	st.parking[block.ID] = block
 }
 
 // Unpark a block in the table
-func (st *StageTable) parked(id BlockID) (*Block, bool) {
+func (st *stageTable) parked(id BlockID) (*Block, bool) {
 	block, ok := st.parking[id]
 	if !ok {
 		return nil, false
@@ -433,11 +433,11 @@ func (st *StageTable) parked(id BlockID) (*Block, bool) {
 	return block, true
 }
 
-func (st *StageTable) unpark(id BlockID) {
+func (st *stageTable) unpark(id BlockID) {
 	delete(st.parking, id)
 }
 
-func (st *StageTable) contains(id BlockID) bool {
+func (st *stageTable) contains(id BlockID) bool {
 	_, ok := st.blocks[id]
 	if ok {
 		return true
@@ -446,23 +446,23 @@ func (st *StageTable) contains(id BlockID) bool {
 	return ok
 }
 
-// BlockChange tracks block changes in a transaction
-type BlockChange struct {
+// blockChange tracks block changes in a transaction
+type blockChange struct {
 	inserted *Set[*Block]
 	updated  *Set[*Block]
 	propSet  *Set[*Block]
 }
 
-// NewBlockChange creates a new BlockChange
-func newBlockChange() BlockChange {
-	return BlockChange{
+// NewBlockChange creates a new blockChange
+func newBlockChange() blockChange {
+	return blockChange{
 		inserted: NewSet[*Block](),
 		updated:  NewSet[*Block](),
 		propSet:  NewSet[*Block](),
 	}
 }
 
-func (bc *BlockChange) Inserted() []*Block {
+func (bc *blockChange) Inserted() []*Block {
 	blocks := make([]*Block, 0, bc.inserted.Cardinality())
 	bc.inserted.ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
@@ -472,7 +472,7 @@ func (bc *BlockChange) Inserted() []*Block {
 	return blocks
 }
 
-func (bc *BlockChange) Updated() []*Block {
+func (bc *blockChange) Updated() []*Block {
 	blocks := make([]*Block, 0, bc.updated.Cardinality())
 	bc.updated.Difference(bc.inserted).ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
@@ -482,7 +482,7 @@ func (bc *BlockChange) Updated() []*Block {
 	return blocks
 }
 
-func (bc *BlockChange) PropSet() []*Block {
+func (bc *blockChange) PropSet() []*Block {
 	blocks := make([]*Block, 0, bc.propSet.Cardinality())
 	bc.propSet.ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
@@ -492,41 +492,41 @@ func (bc *BlockChange) PropSet() []*Block {
 	return blocks
 }
 
-func (bc *BlockChange) addInserted(id *Block) {
+func (bc *blockChange) addInserted(id *Block) {
 	bc.inserted.Add(id)
 }
 
-func (bc *BlockChange) addUpdated(id *Block) {
+func (bc *blockChange) addUpdated(id *Block) {
 	bc.updated.Add(id)
 }
 
-func (bc *BlockChange) addPropSet(id *Block) {
+func (bc *blockChange) addPropSet(id *Block) {
 	bc.propSet.Add(id)
 }
 
-func (bc *BlockChange) empty() bool {
+func (bc *blockChange) empty() bool {
 	return bc.inserted.Cardinality() == 0 && bc.updated.Cardinality() == 0 && bc.propSet.Cardinality() == 0
 }
 
-type BlockChangeType string
+type blockChangeType string
 
 const (
-	Inserted BlockChangeType = "inserted"
-	Updated  BlockChangeType = "updated" // includes move, link, unlink, delete, erase
-	PropSet  BlockChangeType = "prop_set"
+	Inserted blockChangeType = "inserted"
+	Updated  blockChangeType = "updated" // includes move, link, unlink, delete, erase
+	PropSet  blockChangeType = "prop_set"
 )
 
-// MoveTree helps to track block cycle in a space
-type MoveTree struct {
+// moveTree helps to track block cycle in a space
+type moveTree struct {
 	spaceId   SpaceID
 	blocks    Set[BlockID]
 	backEdges map[BlockID]BlockID
 }
 
-// NewMoveTree creates a new MoveTree
-func NewMoveTree(spaceId SpaceID) *MoveTree {
+// newMoveTree creates a new moveTree
+func newMoveTree(spaceId SpaceID) *moveTree {
 	blocks := NewSet(spaceId)
-	return &MoveTree{
+	return &moveTree{
 		spaceId:   spaceId,
 		blocks:    *blocks,
 		backEdges: make(map[BlockID]BlockID),
@@ -534,7 +534,7 @@ func NewMoveTree(spaceId SpaceID) *MoveTree {
 }
 
 // Move moves a block to a new parent
-func (mt *MoveTree) Move(child, parent BlockID) error {
+func (mt *moveTree) Move(child, parent BlockID) error {
 	if mt.spaceId == child {
 		return errors.New("cannot move space block")
 	}
@@ -590,25 +590,25 @@ func (mt *MoveTree) Move(child, parent BlockID) error {
 
 // addEdge adds a parent child connection
 // does not check for cycles
-func (mt *MoveTree) addEdge(child, parent BlockID) {
+func (mt *moveTree) addEdge(child, parent BlockID) {
 	mt.blocks.Add(parent)
 	mt.blocks.Add(child)
 	mt.backEdges[child] = parent
 }
 
 // getParent returns the parent of a block
-func (mt *MoveTree) getParent(block BlockID) (*BlockID, bool) {
+func (mt *moveTree) getParent(block BlockID) (*BlockID, bool) {
 	if parent, ok := mt.backEdges[block]; ok {
 		return &parent, true
 	}
 	return nil, false
 }
 
-func (mt *MoveTree) contains(block BlockID) bool {
+func (mt *moveTree) contains(block BlockID) bool {
 	return mt.blocks.Contains(block)
 }
 
-func (mt *MoveTree) print() {
+func (mt *moveTree) print() {
 	children := make(map[BlockID][]BlockID)
 	for child, parent := range mt.backEdges {
 		if _, ok := children[parent]; !ok {
@@ -631,7 +631,7 @@ func traverse(parent BlockID, children map[BlockID][]BlockID, space treeprint.Tr
 	}
 }
 
-type BlockEdge struct {
+type blockEdge struct {
 	parentID BlockID
 	childID  BlockID
 }

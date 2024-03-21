@@ -2,6 +2,7 @@ package blocktree
 
 import (
 	"errors"
+
 	"github.com/google/btree"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -55,7 +56,7 @@ func BlockViewFromBlock(block *Block) *BlockView {
 	}
 }
 
-func BlockViewFromBlocks(rootID BlockID, blocks []*Block) (*BlockView, error) {
+func blockViewFromBlocks(rootID BlockID, blocks []*Block) (*BlockView, error) {
 	var root *BlockView
 	children := make(map[BlockID]*btree.BTreeG[*Block])
 	linked := make(map[BlockID]*Set[*Block])

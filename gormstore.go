@@ -16,6 +16,7 @@ type GormStore struct {
 	db *gorm.DB
 }
 
+// NewGormStore creates a new GormStore. It requires a gorm database.
 func NewGormStore(db *gorm.DB) *GormStore {
 	return &GormStore{db: db}
 }
@@ -46,7 +47,7 @@ func (g GormStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 }
 
 func (g GormStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
-	var model GormBlock
+	var model gormBlock
 	res := g.db.First(&model, "id = ?", id)
 	if res.Error != nil {
 		return nil, res.Error
@@ -56,7 +57,7 @@ func (g GormStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
 }
 
 func (g GormStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
-	var blocks []*GormBlock
+	var blocks []*gormBlock
 	res := g.db.Where("parent_id = ?", id).Find(&blocks)
 	if res.Error != nil {
 		return nil, res.Error
@@ -85,7 +86,7 @@ func (g GormStore) GetParentBlock(spaceID *SpaceID, id BlockID) (*Block, error) 
 }
 
 func (g GormStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error) {
-	var blocks []*GormBlock
+	var blocks []*gormBlock
 	res := g.db.Where("id IN (?)", ids).Find(&blocks)
 	if res.Error != nil {
 		return nil, res.Error
@@ -123,7 +124,7 @@ func (g GormStore) GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Bloc
 	panic("implement me")
 }
 
-func (g GormStore) GetAncestorEdges(spaceID *SpaceID, id []BlockID) ([]BlockEdge, error) {
+func (g GormStore) GetAncestorEdges(spaceID *SpaceID, id []BlockID) ([]blockEdge, error) {
 	//TODO implement me
 	panic("implement me")
 }
@@ -143,27 +144,27 @@ func (g GormStore) ApplyChange(space *SpaceID, change *StoreChange) error {
 	panic("implement me")
 }
 
-// GormSpace is a space in gorm database.
-type GormSpace struct {
+// gormSpace is a space in gorm database.
+type gormSpace struct {
 	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
 	Name string    `gorm:"not null"`
 }
 
-func (s *GormSpace) toSpace() *Space {
+func (s *gormSpace) toSpace() *Space {
 	return &Space{
 		ID:   s.ID,
 		Name: s.Name,
 	}
 }
 
-func (s *Space) toGormSpace() *GormSpace {
-	return &GormSpace{
+func (s *Space) toGormSpace() *gormSpace {
+	return &gormSpace{
 		ID:   s.ID,
 		Name: s.Name,
 	}
 }
 
-type GormBlock struct {
+type gormBlock struct {
 	ID       uuid.UUID `gorm:"type:uuid;primary_key"`
 	Type     string    `gorm:"not null"`
 	ParentID uuid.UUID `gorm:"type:uuid;not null"`
@@ -172,7 +173,7 @@ type GormBlock struct {
 	Erased   bool      `gorm:"not null"`
 }
 
-func (b *GormBlock) toBlock() (*Block, error) {
+func (b *gormBlock) toBlock() (*Block, error) {
 	block := Block{
 		ID:       b.ID,
 		ParentID: b.ParentID,
@@ -191,8 +192,8 @@ func (b *GormBlock) toBlock() (*Block, error) {
 	return &block, nil
 }
 
-func (b *Block) toGormBlock() *GormBlock {
-	return &GormBlock{
+func (b *Block) toGormBlock() *gormBlock {
+	return &gormBlock{
 		ID:       b.ID,
 		Type:     b.Type,
 		ParentID: b.ParentID,

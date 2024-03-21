@@ -104,7 +104,7 @@ func TestInsertOp(t *testing.T) {
 	)
 
 	// apply the transaction
-	changes, err := tx.Prepare(store)
+	changes, err := tx.prepare(store)
 	assert.NoError(t, err)
 	assert.Condition(t, func() bool {
 		return changes != nil
@@ -215,13 +215,13 @@ func prepareSpace(store *MemStore, spaceID uuid.UUID) error {
 		},
 	}
 
-	changes, _ := tx.Prepare(store)
+	changes, _ := tx.prepare(store)
 	err = store.Apply(&s1, changes)
 	return err
 }
 
 func applyTransaction(t *testing.T, store *MemStore, tx *Transaction) {
-	changes, err := tx.Prepare(store)
+	changes, err := tx.prepare(store)
 	assert.NoError(t, err)
 
 	assert.Condition(t, func() bool {
@@ -293,8 +293,8 @@ func TestMoveOpWithSimpleCycle(t *testing.T) {
 	_, err = store.GetBlock(&s1, b1)
 	assert.NoError(t, err)
 
-	_, err = tx.Prepare(store)
-	assert.EqualError(t, err, ErrDetectedCycle.Error())
+	_, err = tx.prepare(store)
+	assert.EqualError(t, err, ErrCreatesCycle.Error())
 }
 
 func TestMoveOpWithComplexCycle(t *testing.T) {
@@ -317,8 +317,8 @@ func TestMoveOpWithComplexCycle(t *testing.T) {
 	_, err = store.GetBlock(&s1, b1)
 	assert.NoError(t, err)
 
-	_, err = tx.Prepare(store)
-	assert.EqualError(t, err, ErrDetectedCycle.Error())
+	_, err = tx.prepare(store)
+	assert.EqualError(t, err, ErrCreatesCycle.Error())
 }
 
 func TestBlockLink(t *testing.T) {
@@ -338,7 +338,7 @@ func TestBlockLink(t *testing.T) {
 		},
 	}
 
-	change, err := tx.Prepare(store)
+	change, err := tx.prepare(store)
 	assert.NoError(t, err)
 
 	err = store.Apply(&s1, change)
@@ -355,7 +355,7 @@ func TestBlockLink(t *testing.T) {
 
 	descendants, err := store.GetDescendantBlocks(&s1, s1)
 	assert.NoError(t, err)
-	v1, err := BlockViewFromBlocks(s1, descendants)
+	v1, err := blockViewFromBlocks(s1, descendants)
 	assert.NoError(t, err)
 	assert.Condition(t, func() bool {
 		return len(v1.Children) == 5

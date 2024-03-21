@@ -7,7 +7,7 @@ var (
 )
 
 type StoreChange struct {
-	blockChange   *BlockChange
+	blockChange   *blockChange
 	jsonDocChange []*JsonPatch
 	txChange      []*Transaction
 }
@@ -25,7 +25,7 @@ type BlockStore interface {
 	GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	GetParentWithNextBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
-	GetAncestorEdges(spaceID *SpaceID, id []BlockID) ([]BlockEdge, error)
+	GetAncestorEdges(spaceID *SpaceID, id []BlockID) ([]blockEdge, error)
 }
 
 type TransactionStore interface {

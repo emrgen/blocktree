@@ -405,8 +405,8 @@ func (ms *MemStore) GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error)
 	return blocks, nil
 }
 
-func (ms *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEdge, error) {
-	edges := make([]BlockEdge, 0)
+func (ms *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]blockEdge, error) {
+	edges := make([]blockEdge, 0)
 	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		return nil, fmt.Errorf("space %v not found", *spaceID)
@@ -425,7 +425,7 @@ func (ms *MemStore) GetAncestorEdges(spaceID *SpaceID, ids []BlockID) ([]BlockEd
 				break
 			}
 
-			edges = append(edges, BlockEdge{parentID: parent, childID: curr})
+			edges = append(edges, blockEdge{parentID: parent, childID: curr})
 			if parent == *spaceID {
 				break
 			}

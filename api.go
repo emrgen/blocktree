@@ -17,7 +17,7 @@ func New(store Store) *Api {
 
 func (a *Api) Apply(transactions ...*Transaction) error {
 	for _, tx := range transactions {
-		change, err := tx.Prepare(a.store)
+		change, err := tx.prepare(a.store)
 		if err != nil {
 			if errors.Is(err, ErrDetectedCycle) || errors.Is(err, ErrCreatesCycle) {
 				continue

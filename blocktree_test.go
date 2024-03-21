@@ -1,14 +1,15 @@
 package blocktree
 
 import (
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestMoveTree_Move(t *testing.T) {
 	s := uuid.New()
-	tree := NewMoveTree(s)
+	tree := newMoveTree(s)
 	err := tree.Move(s, s)
 	assert.Error(t, err)
 

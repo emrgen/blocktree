@@ -39,3 +39,7 @@ generate-ts-client:
         --type-mappings=string=String
 
 client: protoc generate-ts-client
+
+doc:
+	google-chrome http://localhost:6060/pkg/github.com/emrgen/blocktree
+	godoc -http=:6060

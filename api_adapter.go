@@ -2,13 +2,14 @@ package blocktree
 
 import (
 	"fmt"
+	"time"
+
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"time"
 )
 
-func BlockToProtoV1(b *Block) *v1.Block {
+func blockToProtoV1(b *Block) *v1.Block {
 	logrus.Info(b)
 
 	block := &v1.Block{
@@ -79,7 +80,7 @@ func BlockViewToProtoV1(b *BlockView) *v1.Block {
 	return block
 }
 
-func TransactionFromProtoV1(txv1 *v1.Transaction) (*Transaction, error) {
+func transactionFromProtoV1(txv1 *v1.Transaction) (*Transaction, error) {
 	id, err := uuid.Parse(txv1.TransactionId)
 	if err != nil {
 		return nil, err

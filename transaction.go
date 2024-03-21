@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrCreatesCycle  = fmt.Errorf("cycle detected")
-	ErrDetectedCycle = fmt.Errorf("cycle detected")
+	ErrCreatesCycle  = fmt.Errorf("operation creates cycle")
+	ErrDetectedCycle = fmt.Errorf("existing cycle detected")
 )
 
 type TransactionID = uuid.UUID
@@ -27,7 +27,7 @@ type Transaction struct {
 	Ops     []Op
 }
 
-func (tx *Transaction) Prepare(store Store) (*StoreChange, error) {
+func (tx *Transaction) prepare(store Store) (*StoreChange, error) {
 	// check if transaction is not already applied
 	//transaction, err := store.GetLatestTransaction(&tx.SpaceID)
 	//if err != nil {
@@ -323,7 +323,7 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 		return false, err
 	}
 
-	moveTree := NewMoveTree(tx.SpaceID)
+	moveTree := newMoveTree(tx.SpaceID)
 	for _, edge := range blockEdges {
 		moveTree.addEdge(edge.childID, edge.parentID)
 	}
@@ -430,10 +430,6 @@ func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error)
 	}
 
 	return relevantBlocks, nil
-}
-
-type BlockOps struct {
-	Ops []Op
 }
 
 type OpType string
