@@ -8,7 +8,7 @@ import (
 
 func TestInsertBlockIntoSpace(t *testing.T) {
 	store := NewMemStore()
-	s := NewSpace(s1, "physics")
+	s := newSpace(s1, "physics")
 	err := store.CreateSpace(s)
 	assert.NoError(t, err)
 
@@ -70,8 +70,8 @@ func TestInsertMultipleBlocks(t *testing.T) {
 }
 
 func TestInsertMultipleBlocksInMultipleSpaces(t *testing.T) {
-	sp1 := NewSpace(s1, "physics")
-	sp2 := NewSpace(s2, "chemistry")
+	sp1 := newSpace(s1, "physics")
+	sp2 := newSpace(s2, "chemistry")
 	store := NewMemStore()
 	err := store.CreateSpace(sp1)
 	assert.NoError(t, err)

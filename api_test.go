@@ -7,7 +7,7 @@ import (
 )
 
 func TestCreateSpace(t *testing.T) {
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err := api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -25,7 +25,7 @@ func TestCreateSpace(t *testing.T) {
 }
 
 func TestCreateSpaceAlreadyExists(t *testing.T) {
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err := api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -38,7 +38,7 @@ func TestInsertBlockAtEnd(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -63,7 +63,7 @@ func TestInsertBlockAtStart(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -88,7 +88,7 @@ func TestInsertBlockAfter(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -124,7 +124,7 @@ func TestDeleteBlock(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -164,7 +164,7 @@ func TestEraseBlock(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -208,7 +208,7 @@ func TestMoveBlockStart(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -237,7 +237,7 @@ func TestMoveBlockEnd(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -266,7 +266,7 @@ func TestMoveBlockAfter(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -295,7 +295,7 @@ func TestMoveBlockBefore(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -324,7 +324,7 @@ func TestSimpleMoveCycle(t *testing.T) {
 	var err error
 	var tx *Transaction
 
-	api := New(NewMemStore())
+	api := NewApi(NewMemStore())
 
 	err = api.CreateSpace(s1, "test-1")
 	assert.NoError(t, err)
@@ -358,4 +358,22 @@ func TestSimpleMoveCycle(t *testing.T) {
 	blocks, err = api.GetChildrenBlocks(s1, b1)
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(blocks))
+}
+
+func TestApi_GetBlockSpaceID(t *testing.T) {
+	var err error
+	var tx *Transaction
+
+	api := NewApi(NewMemStore())
+
+	err = api.CreateSpace(s1, "test-1")
+	assert.NoError(t, err)
+
+	tx = createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	spaceID, err := api.GetBlockSpaceID(b1)
+	assert.NoError(t, err)
+	assert.Equal(t, s1, *spaceID)
 }

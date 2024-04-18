@@ -23,7 +23,7 @@ type Space struct {
 	Name string
 }
 
-func NewSpace(spaceID SpaceID, name string) *Space {
+func newSpace(spaceID SpaceID, name string) *Space {
 	return &Space{
 		ID:   spaceID,
 		Name: name,

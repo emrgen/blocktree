@@ -11,34 +11,34 @@ import (
 	"github.com/xlab/treeprint"
 )
 
-// blockTree is a staging ground for loading block from db
-type blockTree struct {
+// BlockTree is a staging ground for loading block from db
+type BlockTree struct {
 	Root     *Block
 	Children map[ParentID]*btree.BTreeG[*Block]
 }
 
-// newBlockTree creates a block tree from root Block
-func newBlockTree(root *Block) *blockTree {
+// NewBlockTree creates a block tree from root Block
+func NewBlockTree(root *Block) *BlockTree {
 	tree := make(map[ParentID]*btree.BTreeG[*Block])
 	tree[root.ID] = btree.NewG(10, blockLessFunc)
-	return &blockTree{
+	return &BlockTree{
 		Root:     root,
 		Children: tree,
 	}
 }
 
 // AddEdge add a parent child connection
-func (bt *blockTree) AddEdge(parent, child *Block) {
+func (bt *BlockTree) AddEdge(parent, child *Block) {
 	if tree, ok := bt.Children[parent.ID]; ok {
 		tree.ReplaceOrInsert(child)
 	}
 }
 
-func (bt *blockTree) View() *BlockView {
+func (bt *BlockTree) View() *BlockView {
 	return bt.view(bt.Root)
 }
 
-func (bt *blockTree) view(parent *Block) *BlockView {
+func (bt *BlockTree) view(parent *Block) *BlockView {
 	view := &BlockView{
 		Type:     parent.Type,
 		ID:       parent.ID,
@@ -320,11 +320,11 @@ func (st *stageTable) placeInside(block *Block, parentID BlockID, action blockCh
 func (st *stageTable) updateChange(block *Block, changeType blockChangeType) {
 	switch changeType {
 	case Inserted:
-		st.change.inserted.Add(block)
+		st.change.addInserted(block)
 	case Updated:
-		st.change.updated.Add(block)
+		st.change.addUpdated(block)
 	case PropSet:
-		st.change.propSet.Add(block)
+		st.change.addPropSet(block)
 	}
 }
 

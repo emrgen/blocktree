@@ -4,6 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"time"
+
 	v1 "github.com/emrgen/blocktree/apis/v1"
 	"github.com/gobuffalo/packr"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
@@ -13,12 +20,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
-	"net"
-	"net/http"
-	"os"
-	"os/signal"
-	"sync"
-	"time"
 )
 
 type Server struct {
@@ -54,7 +55,7 @@ func (s *Server) Start() error {
 		}),
 	)
 
-	api := New(s.store)
+	api := NewApi(s.store)
 	// Register the server with the gRPC server
 	v1.RegisterBlocktreeServer(grpcServer, newGrpcApi(api))
 

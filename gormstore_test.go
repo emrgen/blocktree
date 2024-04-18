@@ -11,7 +11,7 @@ func TestGormStore_Create(t *testing.T) {
 	//}
 
 	//store := NewGormStore(db)
-	//s := NewSpace(s1, "physics")
+	//s := newSpace(s1, "physics")
 	//err = store.CreateSpace(s)
 	//assert.NoError(t, err)
 }
