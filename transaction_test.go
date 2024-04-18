@@ -44,6 +44,14 @@ func deleteOp(blockID uuid.UUID) Op {
 	}
 }
 
+func eraseOp(blockID uuid.UUID) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeErase,
+		BlockID: blockID,
+	}
+}
+
 func moveOp(blockID uuid.UUID, refID uuid.UUID, pos PointerPosition) Op {
 	return Op{
 		Table:   "block",

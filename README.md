@@ -25,6 +25,7 @@ A reusable library for block storage
 - [x] update block
 - [x] patch block
 - [x] delete block
+- [x] erased block
 - [x] move block
 - [x] get block
 - [x] get all descendants of a block
