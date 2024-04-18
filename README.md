@@ -22,7 +22,7 @@ A reusable library for block storage
 ## Progress
 
 - [x] insert block
-- [ ] update block
+- [x] update block
 - [x] patch block
 - [x] delete block
 - [x] move block
@@ -31,7 +31,7 @@ A reusable library for block storage
 - [x] list blocks by parent
 - [x] list page blocks by space
 - [x] create space
-- [ ] update space
-- [ ] delete space
+- [x] update space
+- [x] delete space
 - [ ] get space
 - [ ] get backlinks of a block

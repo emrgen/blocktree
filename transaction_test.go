@@ -56,6 +56,15 @@ func moveOp(blockID uuid.UUID, refID uuid.UUID, pos PointerPosition) Op {
 	}
 }
 
+func updateOp(blockID uuid.UUID, props []byte) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeUpdate,
+		BlockID: blockID,
+		Props:   props,
+	}
+}
+
 func linkOp(blockID uuid.UUID, object string, refID uuid.UUID) Op {
 	return Op{
 		Table:   "block",
@@ -422,6 +431,54 @@ func TestPatchOp(t *testing.T) {
 	assert.Equal(t, `{"name":"John Doe","age":30}`, string(block.Json.Content))
 
 	//store.Print(&s1)
+}
+
+func TestUpdateBlockProps(t *testing.T) {
+	var err error
+	var tx *Transaction
+	store := NewMemStore()
+	err = store.CreateSpace(&Space{
+		ID:   s1,
+		Name: "s1",
+	})
+	assert.NoError(t, err)
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b1, "p1", s1, PositionEnd),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			updateOp(b1, []byte(`[{"op":"add","path":"/name","value":"John Doe"}, {"op":"add","path":"/age","value":30}]`)),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	block, err := store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, `{"name":"John Doe","age":30}`, block.Props.String())
+
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			updateOp(b1, []byte(`[{"op":"replace","path":"/name","value":"Jane Doe"}]`)),
+		},
+	}
+	applyTransaction(t, store, tx)
+
+	block, err = store.GetBlock(&s1, b1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, `{"name":"Jane Doe","age":30}`, block.Props.String())
 }
 
 func TestInsertOpSyncBlocks(t *testing.T) {
