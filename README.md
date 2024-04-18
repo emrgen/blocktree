@@ -13,11 +13,10 @@ A reusable library for block storage
         └── block-2.2
 ```
 
-## Internal Invariants
-
-- all spaces are direct children of the root space(for now)
-- space is a block
+## Block Invariants
+- all spaces are direct children of the root space(0000)
 - blocks in a space form a tree (no cycles, no multiple parents, only one block tree per space)
+- space is also a block
 
 ## Progress
 
