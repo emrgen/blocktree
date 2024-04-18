@@ -1,9 +1,9 @@
 package blocktree
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInsertBlockIntoSpace(t *testing.T) {
@@ -98,8 +98,7 @@ func TestInsertMultipleBlocksInMultipleSpaces(t *testing.T) {
 
 	blocks, err = store.GetChildrenBlocks(&s2, s2)
 	assert.NoError(t, err)
-	logrus.Info(blocks)
 	assert.Equal(t, []*Block{bl2}, blocks)
 
-	store.Print(&s1)
+	//store.Print(&s1)
 }

@@ -70,8 +70,6 @@ func BlockViewToProtoV1(b *BlockView) *v1.Block {
 		block.Json = &content
 	}
 
-	logrus.Info(b.ID.String(), b.Props.String())
-
 	if b.Props != nil {
 		content := b.Props.String()
 		block.Props = &content

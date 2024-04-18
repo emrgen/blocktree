@@ -180,7 +180,6 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 			if err != nil {
 				return nil, err
 			}
-			logrus.Infof("updated block: %v", block.Props)
 			st.change.addPropSet(block)
 		case OpTypePatch:
 			block, ok := st.block(op.BlockID)
