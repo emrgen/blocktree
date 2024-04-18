@@ -34,5 +34,5 @@ A reusable library for block storage
 - [x] create space
 - [x] update space
 - [x] delete space
-- [ ] get space
+- [x] get space
 - [ ] get backlinks of a block
