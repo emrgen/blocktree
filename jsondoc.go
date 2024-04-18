@@ -15,12 +15,10 @@ type JsonPatch = []byte
 // JsonDoc is a json document with incremental updates.
 type JsonDoc struct {
 	Content []byte `json:"string"`
-	// monotonic counter to track the number of updates
 }
 
 type JsonDocPatch struct {
 	ID uuid.UUID `json:"id"`
-	//Ops []JsonDocPatchOp `json:"ops"`
 }
 
 // DefaultJsonDoc creates a new JsonDoc.
@@ -58,6 +56,7 @@ func (j *JsonDoc) Apply(patch JsonPatch) error {
 	return nil
 }
 
+// Diff computes the difference between two json documents.
 func (j *JsonDoc) Diff(other *JsonDoc) (JsonPatch, error) {
 	patch, err := jsondiff.CompareJSON(
 		[]byte(j.Content),
@@ -76,6 +75,7 @@ func (j *JsonDoc) Diff(other *JsonDoc) (JsonPatch, error) {
 	return marshal, nil
 }
 
+// Clone creates a copy of the json document.
 func (j *JsonDoc) Clone() *JsonDoc {
 	if j == nil {
 		return nil
@@ -86,6 +86,7 @@ func (j *JsonDoc) Clone() *JsonDoc {
 	}
 }
 
+// String returns the string representation of the json document.
 func (j *JsonDoc) String() string {
 	if j == nil {
 		return ""
@@ -94,6 +95,7 @@ func (j *JsonDoc) String() string {
 	return string(j.Content)
 }
 
+// Bytes returns the byte representation of the json document.
 func (j *JsonDoc) Bytes() []byte {
 	return j.Content
 }
