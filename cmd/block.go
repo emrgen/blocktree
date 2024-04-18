@@ -119,7 +119,7 @@ func newBlockMoveCmd() *cobra.Command {
 	var spaceID, blockID, refID, pos, object string
 	var insertCmd = &cobra.Command{
 		Use:   "move",
-		Short: "Move a block",
+		Short: "move a block",
 		Run: func(cmd *cobra.Command, args []string) {
 			if spaceID == "" {
 				panic("space ID is required")

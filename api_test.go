@@ -44,11 +44,11 @@ func TestInsertBlockAtEnd(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
@@ -69,11 +69,11 @@ func TestInsertBlockAtStart(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
@@ -94,20 +94,21 @@ func TestInsertBlockAfter(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b3, "p3", b1, PositionAfter))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b4, "p3", b2, PositionBefore))
-	err = api.Apply(tx)
+	sb, err := api.Apply(tx)
 	assert.NoError(t, err)
+	assert.Equal(t, 1, sb.children.Size())
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
 	assert.NoError(t, err)
@@ -129,15 +130,15 @@ func TestMoveBlockStart(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, moveOp(b2, s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
@@ -158,15 +159,15 @@ func TestMoveBlockEnd(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, moveOp(b1, s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
@@ -187,15 +188,15 @@ func TestMoveBlockAfter(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, moveOp(b1, b2, PositionAfter))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
@@ -216,15 +217,15 @@ func TestMoveBlockBefore(t *testing.T) {
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, moveOp(b2, b1, PositionBefore))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, s1)
@@ -246,19 +247,19 @@ func TestSimpleMoveCycle(t *testing.T) {
 
 	// b1 -> b2 -> b3 -> b1
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p2", b1, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b3, "p3", b2, PositionEnd))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	tx = createTx(s1, moveOp(b1, b3, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
 	blocks, err := api.GetChildrenBlocks(s1, b3)
@@ -267,7 +268,7 @@ func TestSimpleMoveCycle(t *testing.T) {
 
 	// should be a cycle
 	tx = createTx(s1, moveOp(b1, b1, PositionStart))
-	err = api.Apply(tx)
+	_, err = api.Apply(tx)
 	assert.Error(t, err)
 
 	blocks, err = api.GetChildrenBlocks(s1, b1)

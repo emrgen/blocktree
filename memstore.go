@@ -303,7 +303,8 @@ func (ms *MemStore) CreateSpace(space *Space) error {
 	return nil
 }
 
-func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
+// Apply applies transactional changes to the store.
+func (ms *MemStore) Apply(spaceID *SpaceID, change *storeChange) error {
 	if change == nil {
 		return errors.New("cannot apply nil change to store")
 	}
@@ -335,7 +336,6 @@ func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
 
 			storeBlock.ParentID = block.ParentID
 			storeBlock.Index = block.Index
-			storeBlock.Json = block.Json
 			storeBlock.Deleted = block.Deleted
 			storeBlock.Erased = block.Erased
 			space.AddBlock(storeBlock)
@@ -346,8 +346,18 @@ func (ms *MemStore) Apply(spaceID *SpaceID, change *StoreChange) error {
 			if !ok {
 				return fmt.Errorf("prop update block not found, %v", block.ID)
 			}
-			storeBlock.Props = block.Props
 			//logrus.Infof("updating props for block %v", block.Props.String())
+			storeBlock.Props = block.Props
+		}
+
+		// patched blocks should already exist in the store
+		for _, block := range blockChange.patched.ToSlice() {
+			storeBlock, ok := space.blocks[block.ID]
+			if !ok {
+				return fmt.Errorf("patch block not found, %v", block.ID)
+			}
+			//logrus.Infof("patching block %v", block.ID)
+			storeBlock.Json = block.Json
 		}
 	}
 

@@ -106,7 +106,7 @@ func transactionFromProtoV1(txv1 *v1.Transaction) (*Transaction, error) {
 		ID:      id,
 		SpaceID: spaceID,
 		UserID:  userID,
-		Time:    time.Now(),
+		Time:    time.Now(), // always use current time
 		Ops:     ops,
 	}
 

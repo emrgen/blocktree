@@ -65,8 +65,8 @@ type stageTable struct {
 	parking  map[BlockID]*Block
 }
 
-// NewStageTable creates a new stageTable
-func NewStageTable() *stageTable {
+// newStageTable creates a new stageTable
+func newStageTable() *stageTable {
 	return &stageTable{
 		children: make(map[ParentID]*btree.BTreeG[*Block]),
 		blocks:   make(map[BlockID]*Block),
@@ -124,8 +124,9 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 
 			st.unpark(block.ID)
 			st.add(block)
-			st.change.addInserted(block)
 			st.change.addPropSet(parent)
+			st.change.addChildren(block.ParentID)
+
 		case OpTypeMove:
 			block, ok := st.block(op.BlockID)
 			if !ok {
@@ -166,8 +167,9 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 			}
 
 			st.add(block)
-			st.change.addUpdated(block)
 			st.change.addPropSet(parent)
+			st.change.addChildren(parent.ID)
+			st.change.addChildren(block.ParentID)
 
 		case OpTypeUpdate:
 			block, ok := st.block(op.BlockID)
@@ -193,6 +195,7 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 				return nil, err
 			}
 			st.change.addUpdated(block)
+			st.change.addPatched(block)
 		case OpTypeDelete:
 			block, ok := st.block(op.BlockID)
 			if !ok {
@@ -451,19 +454,23 @@ type blockChange struct {
 	inserted *Set[*Block]
 	updated  *Set[*Block]
 	propSet  *Set[*Block]
+	patched  *Set[*Block]
+	children *Set[BlockID]
 }
 
 // NewBlockChange creates a new blockChange
 func newBlockChange() blockChange {
 	return blockChange{
 		inserted: NewSet[*Block](),
+		children: NewSet[BlockID](),
 		updated:  NewSet[*Block](),
 		propSet:  NewSet[*Block](),
+		patched:  NewSet[*Block](),
 	}
 }
 
 func (bc *blockChange) Inserted() []*Block {
-	blocks := make([]*Block, 0, bc.inserted.Cardinality())
+	blocks := make([]*Block, 0, bc.inserted.Size())
 	bc.inserted.ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
 		return true
@@ -473,7 +480,7 @@ func (bc *blockChange) Inserted() []*Block {
 }
 
 func (bc *blockChange) Updated() []*Block {
-	blocks := make([]*Block, 0, bc.updated.Cardinality())
+	blocks := make([]*Block, 0, bc.updated.Size())
 	bc.updated.Difference(bc.inserted).ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
 		return true
@@ -483,7 +490,7 @@ func (bc *blockChange) Updated() []*Block {
 }
 
 func (bc *blockChange) PropSet() []*Block {
-	blocks := make([]*Block, 0, bc.propSet.Cardinality())
+	blocks := make([]*Block, 0, bc.propSet.Size())
 	bc.propSet.ForEach(func(item *Block) bool {
 		blocks = append(blocks, item)
 		return true
@@ -500,12 +507,20 @@ func (bc *blockChange) addUpdated(id *Block) {
 	bc.updated.Add(id)
 }
 
+func (bc *blockChange) addPatched(id *Block) {
+	bc.patched.Add(id)
+}
+
+func (bc *blockChange) addChildren(id BlockID) {
+	bc.children.Add(id)
+}
+
 func (bc *blockChange) addPropSet(id *Block) {
 	bc.propSet.Add(id)
 }
 
 func (bc *blockChange) empty() bool {
-	return bc.inserted.Cardinality() == 0 && bc.updated.Cardinality() == 0 && bc.propSet.Cardinality() == 0
+	return bc.inserted.Size() == 0 && bc.updated.Size() == 0 && bc.propSet.Size() == 0
 }
 
 type blockChangeType string
@@ -533,8 +548,8 @@ func newMoveTree(spaceId SpaceID) *moveTree {
 	}
 }
 
-// Move moves a block to a new parent
-func (mt *moveTree) Move(child, parent BlockID) error {
+// move moves a block to a new parent
+func (mt *moveTree) move(child, parent BlockID) error {
 	if mt.spaceId == child {
 		return errors.New("cannot move space block")
 	}

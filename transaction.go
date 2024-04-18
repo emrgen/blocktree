@@ -27,7 +27,7 @@ type Transaction struct {
 	Ops     []Op
 }
 
-func (tx *Transaction) prepare(store Store) (*StoreChange, error) {
+func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 	// check if transaction is not already applied
 	//transaction, err := store.GetLatestTransaction(&tx.SpaceID)
 	//if err != nil {
@@ -56,11 +56,11 @@ func (tx *Transaction) prepare(store Store) (*StoreChange, error) {
 		return nil, err
 	}
 
-	if len(relevantBlocks) != existingBlockIDs.Cardinality() {
+	if len(relevantBlocks) != existingBlockIDs.Size() {
 		logrus.Infof("relevant blocks: %v", existingBlockIDs.ToSlice())
 		return nil, fmt.Errorf("cannot find all referenced blocks")
 	}
-	stage := NewStageTable()
+	stage := newStageTable()
 	//logrus.Infof("relevant blocks: %v", existingBlockIDs.ToSlice())
 	for _, block := range relevantBlocks {
 		stage.add(block)
@@ -264,7 +264,7 @@ func (tx *Transaction) prepare(store Store) (*StoreChange, error) {
 		return nil, err
 	}
 
-	return &StoreChange{
+	return &storeChange{
 		blockChange:   change,
 		jsonDocChange: nil,
 		txChange:      nil,
@@ -363,7 +363,7 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 				if !ok {
 					return false, fmt.Errorf("cannot find parent for move after/before: %v", op)
 				}
-				err := moveTree.Move(op.BlockID, *parentID)
+				err := moveTree.move(op.BlockID, *parentID)
 				if err != nil {
 					if errors.Is(ErrDetectedCycle, err) {
 						return true, nil
@@ -371,7 +371,7 @@ func (tx *Transaction) createsCycles(store Store, blockIDs *Set[BlockID]) (bool,
 					return false, err
 				}
 			case op.At.Position == PositionStart || op.At.Position == PositionEnd:
-				err := moveTree.Move(op.BlockID, op.At.BlockID)
+				err := moveTree.move(op.BlockID, op.At.BlockID)
 				if err != nil {
 					if errors.Is(ErrDetectedCycle, err) {
 						return true, nil

@@ -41,7 +41,7 @@ func (a *grpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactio
 		Transactions: make([]*v1.ApplyTransactionResult, len(transactions)),
 	}
 
-	err := a.api.Apply(transactions...)
+	_, err := a.api.Apply(transactions...)
 	if err != nil {
 		return nil, err
 	}

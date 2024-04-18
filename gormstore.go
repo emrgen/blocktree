@@ -26,7 +26,7 @@ func (g GormStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) 
 	panic("implement me")
 }
 
-func (g GormStore) Apply(space *SpaceID, change *StoreChange) error {
+func (g GormStore) Apply(space *SpaceID, change *storeChange) error {
 	//TODO implement me
 	panic("implement me")
 }
@@ -139,7 +139,7 @@ func (g GormStore) PutTransactions(spaceID *SpaceID, tx []*Transaction) error {
 	panic("implement me")
 }
 
-func (g GormStore) ApplyChange(space *SpaceID, change *StoreChange) error {
+func (g GormStore) ApplyChange(space *SpaceID, change *storeChange) error {
 	//TODO implement me
 	panic("implement me")
 }

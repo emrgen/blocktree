@@ -415,3 +415,26 @@ func TestPatchOp(t *testing.T) {
 
 	//store.Print(&s1)
 }
+
+func TestInsertOpSyncBlocks(t *testing.T) {
+	var err error
+	store := NewMemStore()
+	err = createSpace(store, s1)
+	assert.NoError(t, err)
+
+	tx := createTx(s1,
+		insertOp(b1, "page", s1, PositionStart),
+		insertOp(b2, "title", b1, PositionStart),
+		insertOp(b3, "p1", b2, PositionAfter),
+		insertOp(b4, "p2", b3, PositionBefore),
+	)
+
+	changes, err := tx.prepare(store)
+	assert.NoError(t, err)
+	assert.Condition(t, func() bool {
+		return changes != nil
+	})
+
+	sb := changes.intoSyncBlocks()
+	assert.Equal(t, 2, sb.children.Size())
+}

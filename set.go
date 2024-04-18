@@ -27,14 +27,20 @@ func (s Set[T]) Add(item T) {
 	s.items[item] = true
 }
 
+func (s Set[T]) Extend(items []T) {
+	for _, item := range items {
+		s.Add(item)
+	}
+}
+
 // Contains returns true if the set contains the item
 func (s Set[T]) Contains(item T) bool {
 	_, ok := s.items[item]
 	return ok
 }
 
-// Cardinality returns the number of items in the set
-func (s Set[T]) Cardinality() int {
+// Size returns the number of items in the set
+func (s Set[T]) Size() int {
 	return len(s.items)
 }
 
@@ -87,7 +93,7 @@ func (s Set[T]) ForEach(cb func(T) bool) {
 }
 
 func (s Set[T]) Equals(other *Set[T]) bool {
-	if s.Cardinality() != other.Cardinality() {
+	if s.Size() != other.Size() {
 		return false
 	}
 

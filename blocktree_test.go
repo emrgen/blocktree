@@ -10,7 +10,7 @@ import (
 func TestMoveTree_Move(t *testing.T) {
 	s := uuid.New()
 	tree := newMoveTree(s)
-	err := tree.Move(s, s)
+	err := tree.move(s, s)
 	assert.Error(t, err)
 
 	a := uuid.New()
@@ -19,14 +19,14 @@ func TestMoveTree_Move(t *testing.T) {
 	tree.addEdge(b, s)
 	//tree.print()
 
-	err = tree.Move(a, b)
+	err = tree.move(a, b)
 	assert.NoError(t, err)
 	//tree.print()
 
-	err = tree.Move(b, a)
+	err = tree.move(b, a)
 	assert.Equal(t, err, ErrCreatesCycle)
 
-	err = tree.Move(a, s)
+	err = tree.move(a, s)
 	assert.NoError(t, err)
 
 	c := uuid.New()

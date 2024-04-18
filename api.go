@@ -15,7 +15,14 @@ func New(store Store) *Api {
 	}
 }
 
-func (a *Api) Apply(transactions ...*Transaction) error {
+func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
+	sb := SyncBlocks{
+		children: NewSet[BlockID](),
+		patched:  NewSet[BlockID](),
+		updated:  NewSet[BlockID](),
+		props:    NewSet[BlockID](),
+	}
+
 	for _, tx := range transactions {
 		change, err := tx.prepare(a.store)
 		if err != nil {
@@ -23,15 +30,18 @@ func (a *Api) Apply(transactions ...*Transaction) error {
 				continue
 			}
 
-			return err
+			return nil, err
 		}
+
 		err = a.store.Apply(&tx.SpaceID, change)
+		sb.extend(change.intoSyncBlocks())
+
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return &sb, nil
 }
 
 func (a *Api) CreateSpace(spaceID SpaceID, name string) error {

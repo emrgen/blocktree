@@ -4,24 +4,24 @@ import "testing"
 
 func TestNewSet(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
-	if s.Cardinality() != 3 {
-		t.Errorf("Expected cardinality 3, got %d", s.Cardinality())
+	if s.Size() != 3 {
+		t.Errorf("Expected cardinality 3, got %d", s.Size())
 	}
 }
 
 func TestSet_Add(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
 	s.Add(4)
-	if s.Cardinality() != 4 {
-		t.Errorf("Expected cardinality 4, got %d", s.Cardinality())
+	if s.Size() != 4 {
+		t.Errorf("Expected cardinality 4, got %d", s.Size())
 	}
 }
 
 func TestSet_Remove(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
 	s.Remove(3)
-	if s.Cardinality() != 2 {
-		t.Errorf("Expected cardinality 2, got %d", s.Cardinality())
+	if s.Size() != 2 {
+		t.Errorf("Expected cardinality 2, got %d", s.Size())
 	}
 }
 
@@ -34,8 +34,8 @@ func TestSet_Contains(t *testing.T) {
 
 func TestSet_Cardinality(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
-	if s.Cardinality() != 3 {
-		t.Errorf("Expected cardinality 3, got %d", s.Cardinality())
+	if s.Size() != 3 {
+		t.Errorf("Expected cardinality 3, got %d", s.Size())
 	}
 }
 
@@ -51,8 +51,8 @@ func TestSet_Union(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
 	other := NewSet[int](3, 5, 6)
 	union := s.Union(*other)
-	if union.Cardinality() != 5 {
-		t.Errorf("Expected cardinality 6, got %d", union.Cardinality())
+	if union.Size() != 5 {
+		t.Errorf("Expected cardinality 6, got %d", union.Size())
 	}
 }
 
@@ -60,8 +60,8 @@ func TestSet_Intersect(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
 	other := NewSet[int](2, 3, 4)
 	intersection := s.Intersect(*other)
-	if intersection.Cardinality() != 2 {
-		t.Errorf("Expected cardinality 2, got %d", intersection.Cardinality())
+	if intersection.Size() != 2 {
+		t.Errorf("Expected cardinality 2, got %d", intersection.Size())
 	}
 }
 
@@ -69,8 +69,8 @@ func TestSet_Difference(t *testing.T) {
 	s := NewSet[int](1, 2, 3)
 	other := NewSet[int](2, 3, 4)
 	difference := s.Difference(other)
-	if difference.Cardinality() != 1 {
-		t.Errorf("Expected cardinality 1, got %d", difference.Cardinality())
+	if difference.Size() != 1 {
+		t.Errorf("Expected cardinality 1, got %d", difference.Size())
 	}
 }
 

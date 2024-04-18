@@ -1,15 +1,55 @@
 package blocktree
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	ErrBlockNotFound = errors.New("block not found in store")
 )
 
-type StoreChange struct {
+type storeChange struct {
 	blockChange   *blockChange
 	jsonDocChange []*JsonPatch
 	txChange      []*Transaction
+}
+
+func (sc *storeChange) intoSyncBlocks() *SyncBlocks {
+	sb := NewSyncBlocks()
+	sb.children.Extend(sc.blockChange.children.ToSlice())
+
+	for _, child := range sc.blockChange.updated.ToSlice() {
+		sb.updated.Add(child.ID)
+	}
+
+	for _, child := range sc.blockChange.propSet.ToSlice() {
+		sb.props.Add(child.ID)
+	}
+
+	return sb
+}
+
+type SyncBlocks struct {
+	children *Set[BlockID]
+	patched  *Set[BlockID]
+	updated  *Set[BlockID]
+	props    *Set[BlockID]
+}
+
+func NewSyncBlocks() *SyncBlocks {
+	return &SyncBlocks{
+		children: NewSet[BlockID](),
+		patched:  NewSet[BlockID](),
+		updated:  NewSet[BlockID](),
+		props:    NewSet[BlockID](),
+	}
+}
+
+func (sb *SyncBlocks) extend(other *SyncBlocks) {
+	sb.children.Extend(other.children.ToSlice())
+	sb.patched.Extend(other.patched.ToSlice())
+	sb.updated.Extend(other.updated.ToSlice())
+	sb.props.Extend(other.props.ToSlice())
 }
 
 type BlockStore interface {
@@ -43,5 +83,5 @@ type Store interface {
 	JsonDocStore
 
 	// Apply applies blocktree change to db in one transaction
-	Apply(space *SpaceID, change *StoreChange) error
+	Apply(space *SpaceID, change *storeChange) error
 }
