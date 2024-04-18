@@ -24,7 +24,7 @@ A reusable library for block storage
 - [x] insert block
 - [ ] update block
 - [x] patch block
-- [ ] delete block
+- [x] delete block
 - [x] move block
 - [x] get block
 - [x] get all descendants of a block

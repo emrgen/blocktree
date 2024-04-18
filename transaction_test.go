@@ -36,6 +36,14 @@ func insertOp(blockID uuid.UUID, object string, refID uuid.UUID, pos PointerPosi
 	}
 }
 
+func deleteOp(blockID uuid.UUID) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeDelete,
+		BlockID: blockID,
+	}
+}
+
 func moveOp(blockID uuid.UUID, refID uuid.UUID, pos PointerPosition) Op {
 	return Op{
 		Table:   "block",

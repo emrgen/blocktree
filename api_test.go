@@ -120,6 +120,46 @@ func TestInsertBlockAfter(t *testing.T) {
 	assert.Equal(t, b2, blocks[3].ID)
 }
 
+func TestDeleteBlock(t *testing.T) {
+	var err error
+	var tx *Transaction
+
+	api := New(NewMemStore())
+
+	err = api.CreateSpace(s1, "test-1")
+	assert.NoError(t, err)
+
+	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	tx = createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	tx = createTx(s1, deleteOp(b1))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	blocks, err := api.GetChildrenBlocks(s1, s1)
+	assert.NoError(t, err)
+
+	type blockState struct {
+		ID      BlockID
+		Deleted bool
+	}
+
+	ids := make([]blockState, 0)
+	for _, b := range blocks {
+		ids = append(ids, blockState{
+			ID:      b.ID,
+			Deleted: b.Deleted,
+		})
+	}
+
+	assert.Equal(t, []blockState{{ID: b1, Deleted: true}, {ID: b2, Deleted: false}}, ids)
+}
+
 func TestMoveBlockStart(t *testing.T) {
 	var err error
 	var tx *Transaction
