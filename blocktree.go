@@ -8,7 +8,6 @@ import (
 	"github.com/google/btree"
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"github.com/xlab/treeprint"
 )
 
 // BlockTree is a staging ground for loading block from db
@@ -229,13 +228,13 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 	return &st.change, nil
 }
 
-func (st *stageTable) existingIDs() []BlockID {
-	ids := make([]BlockID, 0, len(st.blocks))
-	for id := range st.blocks {
-		ids = append(ids, id)
-	}
-	return ids
-}
+//func (st *stageTable) existingIDs() []BlockID {
+//	ids := make([]BlockID, 0, len(st.blocks))
+//	for id := range st.blocks {
+//		ids = append(ids, id)
+//	}
+//	return ids
+//}
 
 func (st *stageTable) paceAtStart(block *Block, parentID BlockID, action blockChangeType) {
 	firstChild, ok := st.firstChild(parentID)
@@ -518,9 +517,9 @@ func (bc *blockChange) addPropSet(id *Block) {
 	bc.propSet.Add(id)
 }
 
-func (bc *blockChange) empty() bool {
-	return bc.inserted.Size() == 0 && bc.updated.Size() == 0 && bc.propSet.Size() == 0
-}
+//func (bc *blockChange) empty() bool {
+//	return bc.inserted.Size() == 0 && bc.updated.Size() == 0 && bc.propSet.Size() == 0
+//}
 
 type blockChangeType string
 
@@ -622,28 +621,28 @@ func (mt *moveTree) contains(block BlockID) bool {
 	return mt.blocks.Contains(block)
 }
 
-func (mt *moveTree) print() {
-	children := make(map[BlockID][]BlockID)
-	for child, parent := range mt.backEdges {
-		if _, ok := children[parent]; !ok {
-			children[parent] = make([]BlockID, 0)
-		}
-		children[parent] = append(children[parent], child)
-	}
+//func (mt *moveTree) print() {
+//	children := make(map[BlockID][]BlockID)
+//	for child, parent := range mt.backEdges {
+//		if _, ok := children[parent]; !ok {
+//			children[parent] = make([]BlockID, 0)
+//		}
+//		children[parent] = append(children[parent], child)
+//	}
+//
+//	tree := treeprint.New()
+//	space := tree.AddBranch(mt.spaceId.String())
+//	traverse(mt.spaceId, children, space)
+//
+//	logrus.Infof("%v", tree.String())
+//}
 
-	tree := treeprint.New()
-	space := tree.AddBranch(mt.spaceId.String())
-	traverse(mt.spaceId, children, space)
-
-	logrus.Infof("%v", tree.String())
-}
-
-func traverse(parent BlockID, children map[BlockID][]BlockID, space treeprint.Tree) {
-	for _, child := range children[parent] {
-		branch := space.AddBranch(child.String())
-		traverse(child, children, branch)
-	}
-}
+//func traverse(parent BlockID, children map[BlockID][]BlockID, space treeprint.Tree) {
+//	for _, child := range children[parent] {
+//		branch := space.AddBranch(child.String())
+//		traverse(child, children, branch)
+//	}
+//}
 
 type blockEdge struct {
 	parentID BlockID

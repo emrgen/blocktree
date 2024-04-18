@@ -150,12 +150,12 @@ type gormSpace struct {
 	Name string    `gorm:"not null"`
 }
 
-func (s *gormSpace) toSpace() *Space {
-	return &Space{
-		ID:   s.ID,
-		Name: s.Name,
-	}
-}
+//func (s *gormSpace) toSpace() *Space {
+//	return &Space{
+//		ID:   s.ID,
+//		Name: s.Name,
+//	}
+//}
 
 func (s *Space) toGormSpace() *gormSpace {
 	return &gormSpace{

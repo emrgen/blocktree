@@ -51,3 +51,8 @@ client: proto generate-ts-client
 doc:
 	google-chrome http://localhost:6060/pkg/github.com/emrgen/blocktree
 	godoc -http=:6060
+
+.PHONY: lint
+lint:
+	@echo "Running linter..."
+	golangci-lint run
