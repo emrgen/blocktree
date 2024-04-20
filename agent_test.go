@@ -9,7 +9,6 @@ import (
 )
 
 func TestAgentsInsert(t *testing.T) {
-
 	// create a block server
 	server := newBlockServer()
 
@@ -17,13 +16,14 @@ func TestAgentsInsert(t *testing.T) {
 	aid2 := uuid.New().String()
 	sid := uuid.New().String()
 
-	// create a block agent
+	// create two agents
 	agents := []*blockAgent{
 		newBlockAgent(aid1, sid, NewMemStore(), server),
 		newBlockAgent(aid2, sid, NewMemStore(), server),
 	}
 
-	simulateAgents(agents)
+	// start agents and simulate insert operations
+	simulateAgents(agents, NewSet[OpType](OpTypeInsert))
 
 	// check if all agents have the same block tree
 	for i := 0; i < len(agents); i++ {

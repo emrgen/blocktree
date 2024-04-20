@@ -79,7 +79,7 @@ func (a *blockAgent) equalState(other *blockAgent) bool {
 
 // agents updates the local state separately and tries to reach consensus
 // by comparing the local state with the state of other agents.
-func simulateAgents(agents []*blockAgent) {
+func simulateAgents(agents []*blockAgent, ops *Set[OpType]) {
 	//for _, agent := range agents {
 	//	agent.start()
 	//}
