@@ -23,7 +23,6 @@ type Transaction struct {
 	SpaceID SpaceID
 	UserID  uuid.UUID
 	Time    time.Time
-	Counter uint64
 	Ops     []Op
 }
 

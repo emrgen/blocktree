@@ -3,6 +3,10 @@ package blocktree
 import (
 	"errors"
 	"fmt"
+	"sort"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/google/btree"
 	"github.com/sirupsen/logrus"
@@ -18,15 +22,23 @@ type spaceStore struct {
 	blocks   map[BlockID]*Block
 	parents  map[BlockID]ParentID
 	props    map[BlockID][]byte
-	tx       *Transaction
+	txs      []*Transaction
 }
 
 func newSpaceStore() *spaceStore {
+	timestamp, _ := time.Parse(time.RFC3339, "2000-01-01T00:00:00Z")
 	return &spaceStore{
 		children: make(map[ParentID]*btree.BTreeG[*Block]),
 		blocks:   make(map[BlockID]*Block),
 		parents:  make(map[BlockID]ParentID),
 		props:    make(map[BlockID][]byte),
+		txs: []*Transaction{{
+			ID:      uuid.New(),
+			SpaceID: SpaceID{},
+			UserID:  uuid.Nil,
+			Time:    timestamp,
+			Ops:     nil,
+		}},
 	}
 }
 
@@ -83,7 +95,7 @@ func (ms *MemStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error)
 		return nil, fmt.Errorf("space %v not found", *spaceID)
 	}
 
-	return space.tx, nil
+	return space.txs[len(space.txs)-1], nil
 }
 
 func (ms *MemStore) GetBlockSpaceID(id *BlockID) (*SpaceID, error) {
@@ -304,10 +316,11 @@ func (ms *MemStore) CreateSpace(space *Space) error {
 }
 
 // Apply applies transactional changes to the store.
-func (ms *MemStore) Apply(spaceID *SpaceID, change *storeChange) error {
+func (ms *MemStore) Apply(tx *Transaction, change *storeChange) error {
 	if change == nil {
 		return errors.New("cannot apply nil change to store")
 	}
+	spaceID := &tx.SpaceID
 
 	logrus.Debugf("applying change to store")
 	// all changes are part of a single transaction
@@ -455,7 +468,13 @@ func (ms *MemStore) getSpace(spaceID *SpaceID) (*spaceStore, error) {
 }
 
 func (ms *MemStore) GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error) {
-	return nil, nil
+	for _, tx := range ms.spaces[*spaceID].txs {
+		if tx.ID == *id {
+			return tx, nil
+		}
+	}
+
+	return nil, fmt.Errorf("transaction not found: %v", *id)
 }
 
 func (ms *MemStore) PutTransactions(spaceID *SpaceID, txs []*Transaction) error {
@@ -469,7 +488,10 @@ func (ms *MemStore) PutTransactions(spaceID *SpaceID, txs []*Transaction) error 
 		return errors.New("transactions are empty")
 	}
 
-	space.tx = txs[len(txs)-1]
+	space.txs = append(space.txs, txs...)
+	sort.Slice(space.txs, func(i, j int) bool {
+		return space.txs[i].Time.Before(space.txs[j].Time)
+	})
 	return nil
 }
 

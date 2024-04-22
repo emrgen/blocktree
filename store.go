@@ -1,13 +1,5 @@
 package blocktree
 
-import (
-	"errors"
-)
-
-var (
-	ErrBlockNotFound = errors.New("block not found in store")
-)
-
 type storeChange struct {
 	blockChange   *blockChange
 	jsonDocChange []*JsonPatch
@@ -52,28 +44,45 @@ func (sb *SyncBlocks) extend(other *SyncBlocks) {
 	sb.props.Extend(other.props.ToSlice())
 }
 
+// BlockStore is a store for blocks
 type BlockStore interface {
+	// CreateSpace creates a new space in the store
 	CreateSpace(space *Space) error
+	// GetBlockSpaceID returns the space id of the block
 	GetBlockSpaceID(id *BlockID) (*SpaceID, error)
+	//CreateBlock creates a new block in the store
 	CreateBlock(spaceID *SpaceID, block *Block) error
+	// GetBlock returns the block with the given id
 	GetBlock(spaceID *SpaceID, id BlockID) (*Block, error)
+	// GetChildrenBlocks returns the children of the block with the given id
 	GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetDescendantBlocks returns the descendants of the block with the given id
 	GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetParentBlock returns the parent of the block with the given id
 	GetParentBlock(spaceID *SpaceID, id BlockID) (*Block, error)
+	// GetBlocks returns the blocks with the given ids
 	GetBlocks(spaceID *SpaceID, ids []BlockID) ([]*Block, error)
+	// GetWithFirstChildBlock returns the blocks with the given ids and properties
 	GetWithFirstChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetWithLastChildBlock returns the blocks with the given ids and properties
 	GetWithLastChildBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetParentWithNextBlock returns the parent with the next block
 	GetParentWithNextBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetParentWithPrevBlock returns the parent with the previous block
 	GetParentWithPrevBlock(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetAncestorEdges returns the ancestor edges of the block with the given id
 	GetAncestorEdges(spaceID *SpaceID, id []BlockID) ([]blockEdge, error)
 }
 
+// TransactionStore is a store for transactions
 type TransactionStore interface {
+	// GetLatestTransaction returns the latest transaction in the store
 	GetLatestTransaction(spaceID *SpaceID) (*Transaction, error)
-	//GetTransactions(spaceID *SpaceID, id *TransactionID) (*Transaction, error)
+	// PutTransactions puts transactions in the store
 	PutTransactions(spaceID *SpaceID, tx []*Transaction) error
 }
 
+// JsonDocStore is a store for JSON documents
 type JsonDocStore interface {
 }
 
@@ -83,5 +92,5 @@ type Store interface {
 	JsonDocStore
 
 	// Apply applies blocktree change to db in one transaction
-	Apply(space *SpaceID, change *storeChange) error
+	Apply(tx *Transaction, change *storeChange) error
 }

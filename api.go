@@ -34,7 +34,7 @@ func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 			return nil, err
 		}
 
-		err = a.store.Apply(&tx.SpaceID, change)
+		err = a.store.Apply(tx, change)
 		sb.extend(change.intoSyncBlocks())
 
 		if err != nil {
