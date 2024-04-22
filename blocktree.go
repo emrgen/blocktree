@@ -60,7 +60,7 @@ func (bt *BlockTree) view(parent *Block) *BlockView {
 type stageTable struct {
 	children map[ParentID]*btree.BTreeG[*Block]
 	blocks   map[BlockID]*Block
-	change   blockChange
+	change   *blockChange
 	parking  map[BlockID]*Block
 }
 
@@ -235,7 +235,6 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 			block.ParentID = parent.ID
 			st.change.addUpdated(block)
 		case OpTypeUnlink:
-			logrus.Infof("unlink op: %v", op)
 			block, ok := st.block(op.BlockID)
 			if !ok {
 				return nil, errors.New("unlink block not found")
@@ -246,7 +245,7 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 		}
 	}
 
-	return &st.change, nil
+	return st.change, nil
 }
 
 //func (st *stageTable) existingIDs() []BlockID {
@@ -478,8 +477,8 @@ type blockChange struct {
 }
 
 // NewBlockChange creates a new blockChange
-func newBlockChange() blockChange {
-	return blockChange{
+func newBlockChange() *blockChange {
+	return &blockChange{
 		inserted: NewSet[*Block](),
 		children: NewSet[BlockID](),
 		updated:  NewSet[*Block](),

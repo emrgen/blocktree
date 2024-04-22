@@ -394,12 +394,17 @@ func (ms *MemStore) Apply(tx *Transaction, change *storeChange) error {
 			//logrus.Infof("patching block %v", block.ID)
 			storeBlock.Json = block.Json
 		}
+
+		err := ms.PutTransaction(spaceID, change.tx)
+		if err != nil {
+			return err
+		}
 	}
 
-	if change.txChange != nil {
-		//TODO implement me
-		panic("implement me")
-	}
+	//if change.tx != nil {
+	//	//TODO implement me
+	//	panic("implement me")
+	//}
 
 	if change.jsonDocChange != nil {
 		//TODO implement me
@@ -489,28 +494,24 @@ func (ms *MemStore) getSpace(spaceID *SpaceID) (*spaceStore, error) {
 	return space, nil
 }
 
-func (ms *MemStore) GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error) {
+func (ms *MemStore) GetTransaction(spaceID *SpaceID, id TransactionID) (*Transaction, error) {
 	for _, tx := range ms.spaces[*spaceID].txs {
-		if tx.ID == *id {
+		if tx.ID == id {
 			return tx, nil
 		}
 	}
 
-	return nil, fmt.Errorf("transaction not found: %v", *id)
+	return nil, fmt.Errorf("transaction not found: %v", id)
 }
 
-func (ms *MemStore) PutTransactions(spaceID *SpaceID, txs []*Transaction) error {
+func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
 	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		space = newSpaceStore()
 		ms.spaces[*spaceID] = space
 	}
 
-	if len(txs) == 0 {
-		return errors.New("transactions are empty")
-	}
-
-	space.txs = append(space.txs, txs...)
+	space.txs = append(space.txs, tx)
 	sort.Slice(space.txs, func(i, j int) bool {
 		return space.txs[i].Time.Before(space.txs[j].Time)
 	})

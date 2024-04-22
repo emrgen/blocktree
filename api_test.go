@@ -421,5 +421,30 @@ func TestApi_AddBackLink(t *testing.T) {
 	assert.NoError(t, err)
 
 	blocks, err = api.GetLinkedBlocks(s1, b2)
+	assert.NoError(t, err)
 	assert.Equal(t, 0, len(blocks))
+}
+
+func TestApi_IdempotentTransaction(t *testing.T) {
+	var err error
+
+	api := NewApi(NewMemStore())
+
+	err = api.CreateSpace(s1, "test-1")
+	assert.NoError(t, err)
+
+	tx1 := createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
+	tx2 := createTx(s1, insertOp(b2, "p1", s1, PositionEnd))
+	_, err = api.Apply(tx1)
+	assert.NoError(t, err)
+
+	_, err = api.Apply(tx1, tx2)
+	assert.NoError(t, err)
+
+	after, err := api.GetChildrenBlocks(s1, s1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 2, len(after))
+
+	//api.store.(*MemStore).Print(&s1)
 }

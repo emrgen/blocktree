@@ -3,7 +3,7 @@ package blocktree
 type storeChange struct {
 	blockChange   *blockChange
 	jsonDocChange []*JsonPatch
-	txChange      []*Transaction
+	tx            *Transaction
 }
 
 func (sc *storeChange) intoSyncBlocks() *SyncBlocks {
@@ -78,10 +78,11 @@ type BlockStore interface {
 
 // TransactionStore is a store for transactions
 type TransactionStore interface {
+	GetTransaction(spaceID *SpaceID, id TransactionID) (*Transaction, error)
 	// GetLatestTransaction returns the latest transaction in the store
 	GetLatestTransaction(spaceID *SpaceID) (*Transaction, error)
-	// PutTransactions puts transactions in the store
-	PutTransactions(spaceID *SpaceID, tx []*Transaction) error
+	// PutTransaction puts transactions in the store
+	PutTransaction(spaceID *SpaceID, tx *Transaction) error
 }
 
 // JsonDocStore is a store for JSON documents

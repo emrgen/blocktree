@@ -134,12 +134,12 @@ func (g GormStore) GetAncestorEdges(spaceID *SpaceID, id []BlockID) ([]blockEdge
 	panic("implement me")
 }
 
-func (g GormStore) GetTransaction(spaceID *SpaceID, id *TransactionID) (*Transaction, error) {
+func (g GormStore) GetTransaction(spaceID *SpaceID, id TransactionID) (*Transaction, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (g GormStore) PutTransactions(spaceID *SpaceID, tx []*Transaction) error {
+func (g GormStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
 	//TODO implement me
 	panic("implement me")
 }

@@ -317,7 +317,7 @@ func TestMoveOp(t *testing.T) {
 	assert.Equal(t, b5, blocks[2].ID)
 	assert.Equal(t, b3, blocks[3].ID)
 
-	//store.Print(&s1)
+	store.Print(&s1)
 }
 
 func TestMoveOpWithSimpleCycle(t *testing.T) {

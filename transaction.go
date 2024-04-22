@@ -27,7 +27,15 @@ type Transaction struct {
 }
 
 func (tx *Transaction) prepare(store Store) (*storeChange, error) {
-	// check if transaction is not already applied
+	//check if transaction is not already applied
+	_, err := store.GetTransaction(&tx.SpaceID, tx.ID)
+	if err == nil {
+		return &storeChange{
+			blockChange:   newBlockChange(),
+			jsonDocChange: nil,
+			tx:            tx,
+		}, nil
+	}
 	//transaction, err := store.GetLatestTransaction(&tx.SpaceID)
 	//if err != nil {
 	//	return nil, err
@@ -279,7 +287,7 @@ func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 	return &storeChange{
 		blockChange:   change,
 		jsonDocChange: nil,
-		txChange:      nil,
+		tx:            tx,
 	}, nil
 }
 

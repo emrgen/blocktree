@@ -3,6 +3,8 @@ package blocktree
 import (
 	"reflect"
 	"sync"
+
+	"github.com/google/uuid"
 )
 
 type blockServer struct {
@@ -18,20 +20,25 @@ func newBlockServer() *blockServer {
 }
 
 type blockAgent struct {
-	id       string
-	spaceID  string
+	id       uuid.UUID
+	spaceID  uuid.UUID
 	server   *blockServer
 	api      *Api
-	space    *Block
 	blocks   map[string]*Block
 	children map[string][]string
 }
 
-func newBlockAgent(id string, spaceID string, store Store, server *blockServer) *blockAgent {
+func newBlockAgent(id uuid.UUID, spaceID SpaceID, store Store, server *blockServer) *blockAgent {
+	api := NewApi(NewMemStore())
+	err := api.CreateSpace(spaceID, spaceID.String())
+	if err != nil {
+		panic(err)
+	}
+
 	return &blockAgent{
 		id:       id,
 		spaceID:  spaceID,
-		api:      NewApi(NewMemStore()),
+		api:      api,
 		server:   server,
 		blocks:   make(map[string]*Block),
 		children: make(map[string][]string),
