@@ -73,7 +73,7 @@ func updateOp(blockID uuid.UUID, props []byte) Op {
 	}
 }
 
-func linkOp(blockID uuid.UUID, object string, refID uuid.UUID) Op {
+func linkInsertOp(blockID uuid.UUID, object string, refID uuid.UUID) Op {
 	return Op{
 		Table:   "block",
 		Type:    OpTypeInsert,
@@ -85,6 +85,19 @@ func linkOp(blockID uuid.UUID, object string, refID uuid.UUID) Op {
 			Position: PositionInside,
 		},
 	}
+}
+
+func linkOp(blockID uuid.UUID, refID uuid.UUID) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeLink,
+		BlockID: blockID,
+		At: &Pointer{
+			BlockID:  refID,
+			Position: PositionInside,
+		},
+	}
+
 }
 
 func patchOp(blockID uuid.UUID, patch []byte) Op {
@@ -356,8 +369,8 @@ func TestBlockLink(t *testing.T) {
 		ID:      uuid.New(),
 		SpaceID: s1,
 		Ops: []Op{
-			linkOp(b6, "l1", b2),
-			linkOp(b7, "l2", b2),
+			linkInsertOp(b6, "l1", b2),
+			linkInsertOp(b7, "l2", b2),
 			insertOp(b8, "p2", b2, PositionEnd),
 			insertOp(b9, "p2", b6, PositionEnd),
 		},

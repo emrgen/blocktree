@@ -250,10 +250,17 @@ func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 			for _, block := range blocks {
 				stage.add(block)
 			}
-		case op.Type == OpTypeLink:
-			panic("not implemented")
-		case op.Type == OpTypeUnlink:
-			panic("not implemented")
+		case op.Type == OpTypeLink || op.Type == OpTypeUnlink:
+			parent, err := store.GetBlock(&tx.SpaceID, op.At.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			block, err := store.GetBlock(&tx.SpaceID, op.BlockID)
+			if err != nil {
+				return nil, err
+			}
+			stage.add(parent)
+			stage.add(block)
 		}
 	}
 
@@ -426,6 +433,12 @@ func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error)
 			}
 			relevantBlocks = append(relevantBlocks, block)
 		}
+	case op.Type == OpTypeLink:
+		block, err := store.GetBlock(&tx.SpaceID, op.At.BlockID)
+		if err != nil {
+			return nil, err
+		}
+		relevantBlocks = append(relevantBlocks, block)
 	}
 
 	return relevantBlocks, nil

@@ -129,6 +129,28 @@ func (ms *MemStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, e
 	return blocks, nil
 }
 
+func (ms *MemStore) GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	space, err := ms.getSpace(spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*Block, 0)
+	children, ok := space.children[id]
+	if !ok {
+		return blocks, nil
+	}
+
+	children.Ascend(func(item *Block) bool {
+		if item.Linked {
+			blocks = append(blocks, item.Clone())
+		}
+		return true
+	})
+
+	return blocks, nil
+}
+
 func (ms *MemStore) GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	space, err := ms.getSpace(spaceID)
 	if err != nil {

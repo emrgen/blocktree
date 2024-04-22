@@ -377,3 +377,42 @@ func TestApi_GetBlockSpaceID(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, s1, *spaceID)
 }
+
+func TestApi_AddBackLink(t *testing.T) {
+	var err error
+	var tx *Transaction
+
+	api := NewApi(NewMemStore())
+
+	err = api.CreateSpace(s1, "test-1")
+	assert.NoError(t, err)
+
+	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
+	_, err = api.Apply(tx)
+
+	tx = createTx(s1, insertOp(b2, "p1", s1, PositionStart))
+	_, err = api.Apply(tx)
+
+	tx = createTx(s1, linkInsertOp(b3, "p1", b1))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	blocks, err := api.GetLinkedBlocks(s1, b1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(blocks))
+
+	tx = createTx(s1, linkOp(b3, b2))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	blocks, err = api.GetLinkedBlocks(s1, b2)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 1, len(blocks))
+
+	blocks, err = api.GetLinkedBlocks(s1, b1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 0, len(blocks))
+}

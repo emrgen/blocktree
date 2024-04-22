@@ -222,6 +222,25 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 			}
 			block.Erased = false
 			st.change.addUpdated(block)
+		case OpTypeLink:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("link block not found")
+			}
+			block.Linked = true
+			parent, ok := st.block(op.At.BlockID)
+			if !ok {
+				return nil, errors.New("link parent block not found")
+			}
+			block.ParentID = parent.ID
+			st.change.addUpdated(block)
+		case OpTypeUnlink:
+			block, ok := st.block(op.BlockID)
+			if !ok {
+				return nil, errors.New("unlink block not found")
+			}
+			block.Linked = false
+			st.change.addUpdated(block)
 		}
 	}
 
