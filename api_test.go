@@ -415,4 +415,11 @@ func TestApi_AddBackLink(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, 0, len(blocks))
+
+	tx = createTx(s1, unlinkOp(b3))
+	_, err = api.Apply(tx)
+	assert.NoError(t, err)
+
+	blocks, err = api.GetLinkedBlocks(s1, b2)
+	assert.Equal(t, 0, len(blocks))
 }

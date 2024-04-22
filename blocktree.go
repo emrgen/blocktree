@@ -235,11 +235,13 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 			block.ParentID = parent.ID
 			st.change.addUpdated(block)
 		case OpTypeUnlink:
+			logrus.Infof("unlink op: %v", op)
 			block, ok := st.block(op.BlockID)
 			if !ok {
 				return nil, errors.New("unlink block not found")
 			}
-			block.Linked = false
+			//TODO: check if this is correct
+			block.ParentID = uuid.Nil
 			st.change.addUpdated(block)
 		}
 	}

@@ -250,7 +250,7 @@ func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 			for _, block := range blocks {
 				stage.add(block)
 			}
-		case op.Type == OpTypeLink || op.Type == OpTypeUnlink:
+		case op.Type == OpTypeLink:
 			parent, err := store.GetBlock(&tx.SpaceID, op.At.BlockID)
 			if err != nil {
 				return nil, err
@@ -260,6 +260,12 @@ func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 				return nil, err
 			}
 			stage.add(parent)
+			stage.add(block)
+		case op.Type == OpTypeUnlink:
+			block, err := store.GetBlock(&tx.SpaceID, op.BlockID)
+			if err != nil {
+				return nil, err
+			}
 			stage.add(block)
 		}
 	}

@@ -97,7 +97,14 @@ func linkOp(blockID uuid.UUID, refID uuid.UUID) Op {
 			Position: PositionInside,
 		},
 	}
+}
 
+func unlinkOp(blockID uuid.UUID) Op {
+	return Op{
+		Table:   "block",
+		Type:    OpTypeUnlink,
+		BlockID: blockID,
+	}
 }
 
 func patchOp(blockID uuid.UUID, patch []byte) Op {
