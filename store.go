@@ -87,6 +87,8 @@ type TransactionStore interface {
 	GetLatestTransaction(spaceID *SpaceID) (*Transaction, error)
 	// PutTransaction puts transactions in the store
 	PutTransaction(spaceID *SpaceID, tx *Transaction) error
+	// GetNextTransactions returns the next transactions in the store
+	GetNextTransactions(spaceID *SpaceID, id TransactionID, start, limit int) ([]*Transaction, error)
 }
 
 // JsonDocStore is a store for JSON documents

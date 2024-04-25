@@ -34,7 +34,7 @@ func newSpaceStore() *spaceStore {
 		parents:  make(map[BlockID]ParentID),
 		props:    make(map[BlockID][]byte),
 		txs: []*Transaction{{
-			ID:      uuid.New(),
+			ID:      uuid.Nil,
 			SpaceID: SpaceID{},
 			UserID:  uuid.Nil,
 			Time:    timestamp,
@@ -51,6 +51,7 @@ func (ss *spaceStore) equals(other *spaceStore) bool {
 	for id, block := range ss.blocks {
 		otherBlock, ok := other.blocks[id]
 		if !ok {
+			logrus.Debugf("comparing block %v, %v", block.ID, otherBlock.ID)
 			return false
 		}
 
@@ -58,9 +59,9 @@ func (ss *spaceStore) equals(other *spaceStore) bool {
 			return false
 		}
 
-		if !reflect.DeepEqual(ss.props[id], other.props[id]) {
-			return false
-		}
+		//if !reflect.DeepEqual(ss.props[id], other.props[id]) {
+		//	return false
+		//}
 	}
 
 	return true
@@ -124,7 +125,6 @@ func (ms *MemStore) Equals(other *MemStore) bool {
 		if !ok {
 			return false
 		}
-
 		if !space.equals(otherSpace) {
 			return false
 		}
@@ -439,7 +439,15 @@ func (ms *MemStore) Apply(tx *Transaction, change *storeChange) error {
 			storeBlock.Json = block.Json
 		}
 
-		err := ms.PutTransaction(spaceID, change.tx)
+		err := ms.PutTransaction(spaceID, &Transaction{
+			ID:      tx.ID,
+			SpaceID: tx.SpaceID,
+			UserID:  tx.UserID,
+			Time:    tx.Time,
+			Ops:     tx.Ops,
+			changes: change.intoSyncBlocks(),
+		})
+
 		if err != nil {
 			return err
 		}
@@ -548,7 +556,32 @@ func (ms *MemStore) GetTransaction(spaceID *SpaceID, id TransactionID) (*Transac
 	return nil, fmt.Errorf("transaction not found: %v", id)
 }
 
+func (ms *MemStore) GetNextTransactions(spaceID *SpaceID, id TransactionID, start, limit int) ([]*Transaction, error) {
+	space, ok := ms.spaces[*spaceID]
+	if !ok {
+		return nil, fmt.Errorf("space not found: %v", *spaceID)
+	}
+
+	logrus.Infof("getting next transactions from %v", space.txs)
+	for _, tx := range space.txs {
+		logrus.Printf("tx: %v", tx.ID)
+	}
+
+	for i, tx := range space.txs {
+		if tx.ID == id {
+			start, end := i+start+1, i+start+1+limit
+			end = min(len(space.txs), end)
+
+			logrus.Infof("start: %v, end: %v, len: %v", start, end, len(space.txs))
+			return space.txs[start:end], nil
+		}
+	}
+
+	return []*Transaction{}, nil
+}
+
 func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
+	//logrus.Infof("putting transaction %v", tx.ID)
 	space, ok := ms.spaces[*spaceID]
 	if !ok {
 		space = newSpaceStore()
@@ -557,7 +590,7 @@ func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
 
 	space.txs = append(space.txs, tx)
 	sort.Slice(space.txs, func(i, j int) bool {
-		return space.txs[i].Time.Before(space.txs[j].Time)
+		return space.txs[i].Time.After(space.txs[j].Time)
 	})
 	return nil
 }

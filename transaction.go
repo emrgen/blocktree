@@ -24,6 +24,7 @@ type Transaction struct {
 	UserID  uuid.UUID
 	Time    time.Time
 	Ops     []Op
+	changes *SyncBlocks
 }
 
 func (tx *Transaction) prepare(store Store) (*storeChange, error) {

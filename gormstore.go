@@ -144,6 +144,11 @@ func (g GormStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
 	panic("implement me")
 }
 
+func (g GormStore) GetNextTransactions(spaceID *SpaceID, id TransactionID, start, limit int) ([]*Transaction, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (g GormStore) ApplyChange(space *SpaceID, change *storeChange) error {
 	//TODO implement me
 	panic("implement me")

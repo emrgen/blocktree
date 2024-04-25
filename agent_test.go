@@ -55,8 +55,9 @@ func TestSyncAgents1(t *testing.T) {
 
 	a1.api.store.(*MemStore).Print(&s1)
 
-	a1.sync(server)
-	assert.True(t, a1.api.store.(*MemStore).Equals(a2.api.store.(*MemStore)))
+	err = a1.sync(server)
+	assert.NoError(t, err)
+	assert.True(t, a1.api.store.(*MemStore).Equals(server.api.store.(*MemStore)))
 
 	block, err = server.api.GetBlock(s1, b1)
 	assert.NoError(t, err)
