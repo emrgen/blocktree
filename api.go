@@ -35,11 +35,11 @@ func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 		}
 
 		err = a.store.Apply(tx, change)
-		sb.extend(change.intoSyncBlocks())
-
 		if err != nil {
 			return nil, err
 		}
+
+		sb.extend(change.intoSyncBlocks())
 	}
 
 	return &sb, nil
@@ -82,6 +82,7 @@ func (a *Api) GetChildrenBlocks(spaceID, blockID BlockID) ([]*Block, error) {
 	return blocks, err
 }
 
+// GetLinkedBlocks returns the linked block of the block with the given ID
 func (a *Api) GetLinkedBlocks(spaceID, blockID BlockID) ([]*Block, error) {
 	return a.store.GetLinkedBlocks(&spaceID, blockID)
 }

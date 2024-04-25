@@ -29,6 +29,7 @@ type Transaction struct {
 func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 	//check if transaction is not already applied
 	_, err := store.GetTransaction(&tx.SpaceID, tx.ID)
+	// the transaction is already applied and exists in the store
 	if err == nil {
 		return &storeChange{
 			blockChange:   newBlockChange(),

@@ -44,6 +44,10 @@ func (sb *SyncBlocks) extend(other *SyncBlocks) {
 	sb.props.Extend(other.props.ToSlice())
 }
 
+func (sb *SyncBlocks) IsEmpty() bool {
+	return sb.children.Size() == 0 && sb.patched.Size() == 0 && sb.updated.Size() == 0 && sb.props.Size() == 0
+}
+
 // BlockStore is a store for blocks
 type BlockStore interface {
 	// CreateSpace creates a new space in the store

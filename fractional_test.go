@@ -101,60 +101,6 @@ func TestNewAfterMax(t *testing.T) {
 	assert.Equal(t, pos.bytes, []uint8{255, 255, 130, 128})
 }
 
-// #[test]
-// fn test_fractional_index() {
-//     let mut indices: Vec<FractionalIndex> = Vec::new();
-
-//     let c = FractionalIndex::default();
-
-//     {
-//         let mut m = c.clone();
-//         let mut low = Vec::new();
-//         for _ in 0..20 {
-//             m = FractionalIndex::new_before(&m);
-//             low.push(m.clone())
-//         }
-
-//         low.reverse();
-//         indices.append(&mut low)
-//     }
-
-//     indices.push(c.clone());
-
-//     {
-//         let mut m = c.clone();
-//         let mut high = Vec::new();
-//         for _ in 0..20 {
-//             m = FractionalIndex::new_after(&m);
-//             high.push(m.clone())
-//         }
-
-//         indices.append(&mut high)
-//     }
-
-//     for i in 0..(indices.len() - 1) {
-//         assert!(indices[i] < indices[i + 1])
-//     }
-
-//     for _ in 0..12 {
-//         let mut new_indices: Vec<FractionalIndex> = Vec::new();
-//         for i in 0..(indices.len() - 1) {
-//             let cb = FractionalIndex::new_between(&indices[i], &indices[i + 1]).unwrap();
-//             assert!(&indices[i] < &cb);
-//             assert!(&cb < &indices[i + 1]);
-
-//             let st = cb.to_string();
-//             assert!(FractionalIndex::from_string(&st).unwrap() == cb);
-//             assert!(st < indices[i + 1].to_string());
-
-//             new_indices.push(cb);
-//             new_indices.push(indices[i + 1].clone());
-//         }
-
-//         indices = new_indices;
-//     }
-// }
-
 func TestBeforeWrap(t *testing.T) {
 	pos := fromUnterminated([]uint8{0})
 	assert.Equal(t, pos.bytes, []uint8{0, 128})

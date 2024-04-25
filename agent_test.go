@@ -10,16 +10,15 @@ import (
 
 func TestAgentsInsert(t *testing.T) {
 	// create a block server
-	server := newBlockServer()
+	server := newBlockServer(s1)
 
 	aid1 := uuid.New()
 	aid2 := uuid.New()
-	sid := uuid.New()
 
 	// create two agents
 	agents := []*blockAgent{
-		newBlockAgent(aid1, sid, NewMemStore(), server),
-		newBlockAgent(aid2, sid, NewMemStore(), server),
+		newBlockAgent(aid1, s1, NewMemStore(), server),
+		newBlockAgent(aid2, s1, NewMemStore(), server),
 	}
 
 	// start agents and simulate insert operations
@@ -34,8 +33,10 @@ func TestAgentsInsert(t *testing.T) {
 }
 
 func TestSyncAgents1(t *testing.T) {
+	var block *Block
+	var err error
 	// create a block server
-	server := newBlockServer()
+	server := newBlockServer(s1)
 
 	aid1 := uuid.New()
 	aid2 := uuid.New()
@@ -45,15 +46,20 @@ func TestSyncAgents1(t *testing.T) {
 
 	a1tx1 := createTx(s1, insertOp(b1, "p1", s1, PositionStart))
 
-	_, err := a1.api.Apply(a1tx1)
+	err = a1.apply(a1tx1)
 	assert.NoError(t, err)
 
-	block, err := a1.api.GetBlock(s1, b1)
+	block, err = a1.api.GetBlock(s1, b1)
 	assert.NoError(t, err)
-
 	assert.Equal(t, block.ID, b1)
 
 	a1.api.store.(*MemStore).Print(&s1)
+
+	a1.sync(server)
+
+	block, err = server.api.GetBlock(s1, b1)
+	assert.NoError(t, err)
+	assert.Equal(t, block.ID, b1)
 
 	agents := []*blockAgent{a1, a2}
 	// check if all agents have the same block tree

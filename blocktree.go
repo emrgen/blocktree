@@ -562,7 +562,7 @@ func newMoveTree(spaceId SpaceID) *moveTree {
 	return &moveTree{
 		spaceId:   spaceId,
 		blocks:    *blocks,
-		backEdges: make(map[BlockID]BlockID),
+		backEdges: make(map[BlockID]BlockID), // edges towards root
 	}
 }
 
@@ -593,7 +593,7 @@ func (mt *moveTree) move(child, parent BlockID) error {
 		return nil
 	}
 
-	// if child is an ancestor of parent, then the move would create a cycle
+	// if child is an ancestor of the new parent, then the move would create a cycle
 	parentId := parent
 	visited := mapset.NewSet(parentId)
 	for {

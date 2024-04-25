@@ -12,11 +12,22 @@ type blockServer struct {
 	mu  sync.Mutex
 }
 
-func newBlockServer() *blockServer {
+// newBlockServer creates a new block server with a space.
+func newBlockServer(spaceID SpaceID) *blockServer {
 	store := NewMemStore()
+	api := NewApi(store)
+	api.CreateSpace(spaceID, spaceID.String())
 	return &blockServer{
-		api: NewApi(store),
+		api: api,
 	}
+}
+
+// apply applies transactions to the server.
+func (s *blockServer) apply(tx ...*Transaction) (*SyncBlocks, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.api.Apply(tx...)
 }
 
 type blockAgent struct {
@@ -26,6 +37,7 @@ type blockAgent struct {
 	api      *Api
 	blocks   map[string]*Block
 	children map[string][]string
+	applied  []*Transaction
 }
 
 func newBlockAgent(id uuid.UUID, spaceID SpaceID, store Store, server *blockServer) *blockAgent {
@@ -42,7 +54,36 @@ func newBlockAgent(id uuid.UUID, spaceID SpaceID, store Store, server *blockServ
 		server:   server,
 		blocks:   make(map[string]*Block),
 		children: make(map[string][]string),
+		applied:  make([]*Transaction, 0),
 	}
+}
+
+func (a *blockAgent) apply(tx ...*Transaction) error {
+	_, err := a.api.Apply(tx...)
+	if err != nil {
+		return err
+	}
+
+	a.applied = append(a.applied, tx...)
+
+	return nil
+}
+
+// sync applies all transactions that were not applied yet.
+func (a *blockAgent) sync(server *blockServer) error {
+	applied := a.applied
+	for _, tx := range a.applied {
+		_, err := server.apply(tx)
+		if err != nil {
+			return err
+		}
+
+		applied = applied[1:]
+	}
+
+	a.applied = applied
+
+	return nil
 }
 
 func (a *blockAgent) start() {
