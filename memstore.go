@@ -3,6 +3,7 @@ package blocktree
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"time"
 
@@ -40,6 +41,29 @@ func newSpaceStore() *spaceStore {
 			Ops:     nil,
 		}},
 	}
+}
+
+func (ss *spaceStore) equals(other *spaceStore) bool {
+	if len(ss.blocks) != len(other.blocks) {
+		return false
+	}
+
+	for id, block := range ss.blocks {
+		otherBlock, ok := other.blocks[id]
+		if !ok {
+			return false
+		}
+
+		if !reflect.DeepEqual(block, otherBlock) {
+			return false
+		}
+
+		if !reflect.DeepEqual(ss.props[id], other.props[id]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (ss *spaceStore) AddBlock(block *Block) {
@@ -87,6 +111,26 @@ func NewMemStore() *MemStore {
 		spaces:     make(map[SpaceID]*spaceStore),
 		blockSpace: make(map[BlockID]SpaceID),
 	}
+}
+
+// Equals compares two MemStore instances.
+func (ms *MemStore) Equals(other *MemStore) bool {
+	if len(ms.spaces) != len(other.spaces) {
+		return false
+	}
+
+	for id, space := range ms.spaces {
+		otherSpace, ok := other.spaces[id]
+		if !ok {
+			return false
+		}
+
+		if !space.equals(otherSpace) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (ms *MemStore) GetLatestTransaction(spaceID *SpaceID) (*Transaction, error) {
