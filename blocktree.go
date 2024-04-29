@@ -141,6 +141,8 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 				return nil, errors.New("old parent block not found for move block")
 			}
 
+			st.change.addChildren(*op.ParentID)
+
 			// remove block from its current position
 			// to ensure that the block (subtree) is not in the tree
 			// the subtree nodes are still in the table but the connection is removed

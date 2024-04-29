@@ -10,7 +10,7 @@ import (
 
 func TestAgentsInsert(t *testing.T) {
 	// create a block server
-	server := newBlockServer(s1)
+	server, _ := newBlockServer(s1)
 
 	aid1 := uuid.New()
 	aid2 := uuid.New()
@@ -32,17 +32,15 @@ func TestAgentsInsert(t *testing.T) {
 	}
 }
 
-func TestSyncAgents1(t *testing.T) {
+func TestSyncAgentWithServer(t *testing.T) {
 	var block *Block
 	var err error
 	// create a block server
-	server := newBlockServer(s1)
+	server, _ := newBlockServer(s1)
 
 	aid1 := uuid.New()
-	aid2 := uuid.New()
 
 	a1 := newBlockAgent(aid1, s1, NewMemStore(), server)
-	a2 := newBlockAgent(aid2, s1, NewMemStore(), server)
 
 	a1tx1 := createTx(s1, insertOp(b1, "p1", s1, PositionStart))
 
@@ -58,16 +56,52 @@ func TestSyncAgents1(t *testing.T) {
 	err = a1.sync(server)
 	assert.NoError(t, err)
 	assert.True(t, a1.api.store.(*MemStore).Equals(server.api.store.(*MemStore)))
+}
 
-	block, err = server.api.GetBlock(s1, b1)
+func TestSyncAgentWithServerWithConflict(t *testing.T) {
+	var block *Block
+	var err error
+	// create a block server
+	server, _ := newBlockServer(s1)
+
+	aid1 := uuid.New()
+	a1 := newBlockAgent(aid1, s1, NewMemStore(), server)
+
+	a1tx1 := createTx(s1, insertOp(b1, "p1", s1, PositionStart))
+
+	err = a1.apply(a1tx1)
+	assert.NoError(t, err)
+
+	block, err = a1.api.GetBlock(s1, b1)
 	assert.NoError(t, err)
 	assert.Equal(t, block.ID, b1)
 
-	agents := []*blockAgent{a1, a2}
-	// check if all agents have the same block tree
-	for i := 0; i < len(agents); i++ {
-		for j := 0; j < len(agents); j++ {
-			assert.Equal(t, agents[i].equalState(agents[j]), true)
-		}
-	}
+	a1.api.store.(*MemStore).Print(&s1)
+
+	// create a new agent
+	aid2 := uuid.New()
+	a2 := newBlockAgent(aid2, s1, NewMemStore(), server)
+
+	a2tx1 := createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
+
+	err = a2.apply(a2tx1)
+	assert.NoError(t, err)
+
+	block, err = a2.api.GetBlock(s1, b1)
+	assert.NoError(t, err)
+	assert.Equal(t, block.ID, b1)
+
+	a2.api.store.(*MemStore).Print(&s1)
+
+	err = a1.sync(server)
+	assert.NoError(t, err)
+
+	assert.True(t, a1.api.store.(*MemStore).Equals(server.api.store.(*MemStore)))
+
+	err = a2.sync(server)
+	assert.NoError(t, err)
+
+	server.sync(a2)
+
+	assert.True(t, a2.api.store.(*MemStore).Equals(a1.api.store.(*MemStore)))
 }

@@ -43,12 +43,13 @@ message OpProp {
 message Op {
   string table = 1;
   string block_id = 2;
-  OpType type = 3;
-  Pointer at = 4;
-  optional string object = 5;
-  optional bool linked = 6;
-  optional string props = 7;
-  optional string patch = 8;
+  optional string parent_id = 3;
+  OpType type = 4;
+  Pointer at = 5;
+  optional string object = 6;
+  optional bool linked = 7;
+  optional string props = 8;
+  optional string patch = 9;
 }
 
 message Transaction {

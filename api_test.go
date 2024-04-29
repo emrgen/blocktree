@@ -221,7 +221,7 @@ func TestMoveBlockStart(t *testing.T) {
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
-	tx = createTx(s1, moveOp(b2, s1, PositionStart))
+	tx = createTx(s1, moveOp(b2, s1, s1, PositionStart))
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
@@ -250,7 +250,7 @@ func TestMoveBlockEnd(t *testing.T) {
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
-	tx = createTx(s1, moveOp(b1, s1, PositionEnd))
+	tx = createTx(s1, moveOp(b1, s1, s1, PositionEnd))
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
@@ -279,7 +279,7 @@ func TestMoveBlockAfter(t *testing.T) {
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
-	tx = createTx(s1, moveOp(b1, b2, PositionAfter))
+	tx = createTx(s1, moveOp(b1, s1, b2, PositionAfter))
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
@@ -308,7 +308,7 @@ func TestMoveBlockBefore(t *testing.T) {
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
-	tx = createTx(s1, moveOp(b2, b1, PositionBefore))
+	tx = createTx(s1, moveOp(b2, s1, b1, PositionBefore))
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
@@ -342,7 +342,7 @@ func TestSimpleMoveCycle(t *testing.T) {
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
-	tx = createTx(s1, moveOp(b1, b3, PositionStart))
+	tx = createTx(s1, moveOp(b1, s1, b3, PositionStart))
 	_, err = api.Apply(tx)
 	assert.NoError(t, err)
 
@@ -351,7 +351,7 @@ func TestSimpleMoveCycle(t *testing.T) {
 	assert.Equal(t, 0, len(blocks))
 
 	// should be a cycle
-	tx = createTx(s1, moveOp(b1, b1, PositionStart))
+	tx = createTx(s1, moveOp(b1, s1, b1, PositionStart))
 	_, err = api.Apply(tx)
 	assert.Error(t, err)
 
@@ -389,9 +389,11 @@ func TestApi_AddBackLink(t *testing.T) {
 
 	tx = createTx(s1, insertOp(b1, "p1", s1, PositionStart))
 	_, err = api.Apply(tx)
+	assert.NoError(t, err)
 
 	tx = createTx(s1, insertOp(b2, "p1", s1, PositionStart))
 	_, err = api.Apply(tx)
+	assert.NoError(t, err)
 
 	tx = createTx(s1, linkInsertOp(b3, "p1", b1))
 	_, err = api.Apply(tx)

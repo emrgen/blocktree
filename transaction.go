@@ -162,6 +162,10 @@ func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 				}
 			}
 		case op.Type == OpTypeMove:
+			if op.ParentID == nil {
+				return nil, fmt.Errorf("invalid move op without parent id: %v", op)
+			}
+
 			if op.At == nil {
 				return nil, fmt.Errorf("invalid move op without at: %v", op)
 			}
@@ -498,14 +502,15 @@ type OpProp struct {
 
 // Op is an operation that is applied to a blocktree.
 type Op struct {
-	Table   string   `json:"table"`
-	Type    OpType   `json:"type"`
-	Object  string   `json:"object"`
-	Linked  bool     `json:"linked"`
-	BlockID BlockID  `json:"block_id"`
-	At      *Pointer `json:"at"`
-	Props   []byte   `json:"props"`
-	Patch   []byte   `json:"patch"`
+	Table    string   `json:"table"`
+	Type     OpType   `json:"type"`
+	Object   string   `json:"object"`
+	Linked   bool     `json:"linked"`
+	BlockID  BlockID  `json:"block_id"`
+	ParentID *BlockID `json:"parent_id"` // parent_id before move
+	At       *Pointer `json:"at"`
+	Props    []byte   `json:"props"`
+	Patch    []byte   `json:"patch"`
 }
 
 func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {

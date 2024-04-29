@@ -52,11 +52,12 @@ func eraseOp(blockID uuid.UUID) Op {
 	}
 }
 
-func moveOp(blockID uuid.UUID, refID uuid.UUID, pos PointerPosition) Op {
+func moveOp(blockID uuid.UUID, from, refID uuid.UUID, pos PointerPosition) Op {
 	return Op{
-		Table:   "block",
-		Type:    OpTypeMove,
-		BlockID: blockID,
+		Table:    "block",
+		Type:     OpTypeMove,
+		BlockID:  blockID,
+		ParentID: &from,
 		At: &Pointer{
 			BlockID:  refID,
 			Position: pos,
@@ -287,8 +288,8 @@ func TestMoveOp(t *testing.T) {
 		ID:      uuid.New(),
 		SpaceID: s1,
 		Ops: []Op{
-			moveOp(b1, b2, PositionStart),
-			moveOp(b3, b2, PositionEnd),
+			moveOp(b1, s1, b2, PositionStart),
+			moveOp(b3, s1, b2, PositionEnd),
 		},
 	}
 
@@ -301,8 +302,8 @@ func TestMoveOp(t *testing.T) {
 		ID:      uuid.New(),
 		SpaceID: s1,
 		Ops: []Op{
-			moveOp(b4, b1, PositionAfter),
-			moveOp(b5, b3, PositionBefore),
+			moveOp(b4, s1, b1, PositionAfter),
+			moveOp(b5, s1, b3, PositionBefore),
 		},
 	}
 
@@ -330,8 +331,8 @@ func TestMoveOpWithSimpleCycle(t *testing.T) {
 		ID:      uuid.New(),
 		SpaceID: s1,
 		Ops: []Op{
-			moveOp(b1, b2, PositionStart),
-			moveOp(b2, b1, PositionStart),
+			moveOp(b1, s1, b2, PositionStart),
+			moveOp(b2, s1, b1, PositionStart),
 		},
 	}
 
@@ -352,10 +353,10 @@ func TestMoveOpWithComplexCycle(t *testing.T) {
 		ID:      uuid.New(),
 		SpaceID: s1,
 		Ops: []Op{
-			moveOp(b1, b2, PositionStart),
-			moveOp(b2, b3, PositionStart),
-			moveOp(b3, b4, PositionStart),
-			moveOp(b4, b1, PositionStart),
+			moveOp(b1, s1, b2, PositionStart),
+			moveOp(b2, s1, b3, PositionStart),
+			moveOp(b3, s1, b4, PositionStart),
+			moveOp(b4, s1, b1, PositionStart),
 		},
 	}
 

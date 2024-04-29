@@ -13,13 +13,50 @@ type blockServer struct {
 }
 
 // newBlockServer creates a new block server with a space.
-func newBlockServer(spaceID SpaceID) *blockServer {
+func newBlockServer(spaceID SpaceID) (*blockServer, error) {
 	store := NewMemStore()
 	api := NewApi(store)
-	api.CreateSpace(spaceID, spaceID.String())
+	err := api.CreateSpace(spaceID, spaceID.String())
+	if err != nil {
+		return nil, err
+	}
 	return &blockServer{
 		api: api,
+	}, nil
+}
+
+// sync synchronizes the agent with the server.
+func (s *blockServer) sync(agent *blockAgent) {
+	if len(agent.applied) == 0 {
+		return
 	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// find last transaction applied by the agent
+	lastTx := agent.applied[len(agent.applied)-1]
+	page := 0
+	pageSize := 10
+	changes := NewSyncBlocks()
+	for {
+		transactions, err := s.api.store.GetNextTransactions(&agent.spaceID, lastTx.ID, page, pageSize)
+		if err != nil {
+			return
+		}
+
+		// if no more transactions, break
+		if len(transactions) == 0 {
+			break
+		}
+
+		// merge changes from all transactions
+		for _, tx := range transactions {
+			changes.extend(tx.changes)
+		}
+
+		page++
+	}
+	// merge block changes from all transactions applied by the agent
 }
 
 // apply applies transactions to the server.
@@ -69,7 +106,7 @@ func (a *blockAgent) apply(tx ...*Transaction) error {
 	return nil
 }
 
-// sync applies all transactions that were not applied yet.
+// sync synchronizes the server with the agent.
 func (a *blockAgent) sync(server *blockServer) error {
 	applied := a.applied
 	for _, tx := range a.applied {
@@ -90,7 +127,6 @@ func (a *blockAgent) start() {
 }
 
 func (a *blockAgent) stop() {
-
 }
 
 func (a *blockAgent) equalState(other *blockAgent) bool {
