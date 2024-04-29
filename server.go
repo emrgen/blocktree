@@ -67,7 +67,7 @@ func (s *Server) Start() error {
 	}
 
 	apiMux := http.NewServeMux()
-	openAPIBox := packr.NewBox("../../docs/v1")
+	openAPIBox := packr.NewBox("docs/v1")
 	docsPath := "/v1/docs/"
 	apiMux.Handle(docsPath, http.StripPrefix(docsPath, http.FileServer(openAPIBox)))
 	apiMux.Handle("/", mux)
@@ -100,6 +100,7 @@ func (s *Server) Start() error {
 	go func() {
 		defer wg.Done()
 		logrus.Info("starting rest gateway on: ", httpPort)
+		logrus.Info("click on the following link to view the API documentation: http://localhost", httpPort, "/v1/docs/")
 		if err := httpServer.Serve(rl); err != nil {
 			if !errors.Is(err, http.ErrServerClosed) {
 				logrus.Errorf("error starting rest gateway: %v", err)

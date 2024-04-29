@@ -53,6 +53,7 @@ openapitools.json
 
 build/
 dist/
+docs/
 
 # Misc
 .DS_Store

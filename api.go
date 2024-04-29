@@ -92,3 +92,12 @@ func (a *Api) GetLinkedBlocks(spaceID, blockID BlockID) ([]*Block, error) {
 func (a *Api) GetDescendantBlocks(spaceID, blockID BlockID) ([]*Block, error) {
 	return a.store.GetDescendantBlocks(&spaceID, blockID)
 }
+
+type BlockUpdates struct {
+	Children map[BlockID][]BlockID
+	Blocks   map[BlockID]*Block
+}
+
+func (a *Api) GetUpdates(spaceID SpaceID, txID TransactionID) (*BlockUpdates, error) {
+	panic("not implemented")
+}

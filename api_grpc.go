@@ -175,3 +175,7 @@ func (a *grpcApi) GetBlockPage(ctx context.Context, request *v1.GetBlockPageRequ
 	//TODO implement me
 	panic("implement me")
 }
+
+func (a *grpcApi) GetUpdates(ctx context.Context, request *v1.GetUpdatesRequest) (*v1.GetUpdatesResponse, error) {
+	panic("implement me")
+}

@@ -129,7 +129,21 @@ message GetBlockPageRequest {
 }
 
 message GetBlockPageResponse {
-  Block page = 1;
+  repeated Block blocks = 1;
+}
+
+message GetUpdatesRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string transaction_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message ChildIds {
+  repeated string block_ids = 1;
+}
+
+message GetUpdatesResponse {
+  map<string, ChildIds> updates = 1;
+  repeated Block blocks = 2;
 }
 
 service Blocktree {
@@ -138,6 +152,9 @@ service Blocktree {
       post: "/v1/transactions"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "ApplyTransactions"
+    };
   }
 
   rpc CreateSpace(CreateSpaceRequest) returns (CreateSpaceResponse) {
@@ -145,11 +162,17 @@ service Blocktree {
       post: "/v1/spaces"
       body: "*"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "CreateSpace"
+    };
   }
 
   rpc GetBlock(GetBlockRequest) returns (GetBlockResponse) {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBlock"
     };
   }
 
@@ -157,11 +180,17 @@ service Blocktree {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}/children"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBlockChildren"
+    };
   }
 
   rpc GetBlockDescendants(GetBlockDescendantsRequest) returns (GetBlockDescendantsResponse) {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}/descendants"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBlockDescendants"
     };
   }
 
@@ -169,6 +198,17 @@ service Blocktree {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}/page"
     };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBlockPage"
+    };
   }
 
+  rpc GetUpdates(GetUpdatesRequest) returns (GetUpdatesResponse) {
+    option (google.api.http) = {
+      get: "/v1/updates/{space_id}/{transaction_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetUpdates"
+    };
+  }
 }
