@@ -1,6 +1,7 @@
 package blocktree
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -376,6 +377,52 @@ func TestApi_GetBlockSpaceID(t *testing.T) {
 	spaceID, err := api.GetBlockSpaceID(b1)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, *spaceID)
+}
+
+func TestApi_TransactionChanges(t *testing.T) {
+	var err error
+
+	api := NewApi(NewMemStore())
+
+	err = api.CreateSpace(s1, "test-1")
+	assert.NoError(t, err)
+
+	tx1 := createTx(s1, insertOp(b1, "p1", s1, PositionEnd))
+	ch1, err := api.Apply(tx1)
+	assert.NoError(t, err)
+
+	tx2 := createTx(s1, insertOp(b2, "p2", s1, PositionEnd))
+	ch2, err := api.Apply(tx2)
+	assert.NoError(t, err)
+
+	tx3 := createTx(s1, insertOp(b3, "p3", s1, PositionEnd))
+	ch3, err := api.Apply(tx3)
+	assert.NoError(t, err)
+
+	tx4 := createTx(s1, moveOp(b1, s1, b3, PositionStart))
+	ch4, err := api.Apply(tx4)
+	assert.NoError(t, err)
+
+	changes := tx1.changes
+	fmt.Println(changes)
+
+	assert.Equal(t, 1, ch1.children.Size())
+	assert.Equal(t, 1, ch2.children.Size())
+	assert.Equal(t, 1, ch3.children.Size())
+
+	assert.Equal(t, 1, ch4.updated.Size())
+	assert.Equal(t, 2, ch4.children.Size())
+
+	transactions, err := api.store.GetNextTransactions(&s1, tx1.ID, 0, 10)
+	assert.NoError(t, err)
+
+	assert.Equal(t, 3, len(transactions))
+
+	assert.Equal(t, tx2.ID, transactions[0].ID)
+
+	assert.Equal(t, ch2, transactions[0].changes)
+	assert.Equal(t, ch3, transactions[1].changes)
+	assert.Equal(t, ch4, transactions[2].changes)
 }
 
 func TestApi_AddBackLink(t *testing.T) {

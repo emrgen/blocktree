@@ -60,3 +60,6 @@ docs/
 *.pyc
 
 client
+
+tmp
+.tmp
