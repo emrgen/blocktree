@@ -410,7 +410,7 @@ func TestApi_TransactionChanges(t *testing.T) {
 	assert.Equal(t, 1, ch2.children.Size())
 	assert.Equal(t, 1, ch3.children.Size())
 
-	assert.Equal(t, 1, ch4.updated.Size())
+	//assert.Equal(t, 1, ch4.updated.Size())
 	assert.Equal(t, 2, ch4.children.Size())
 
 	transactions, err := api.store.GetNextTransactions(&s1, tx1.ID, 0, 10)
@@ -420,9 +420,20 @@ func TestApi_TransactionChanges(t *testing.T) {
 
 	assert.Equal(t, tx2.ID, transactions[0].ID)
 
+	assert.Equal(t, 1, ch1.inserted.Size())
 	assert.Equal(t, ch2, transactions[0].changes)
 	assert.Equal(t, ch3, transactions[1].changes)
 	assert.Equal(t, ch4, transactions[2].changes)
+
+	updates, err := api.GetUpdates(s1, tx1.ID)
+	assert.NoError(t, err)
+
+	assert.Equal(t, b1, updates.Children[b3][0])
+	assert.Equal(t, []BlockID{b2, b3}, updates.Children[s1])
+
+	assert.Equal(t, 3, len(updates.Blocks))
+
+	fmt.Printf("updates: %v\n", updates)
 }
 
 func TestApi_AddBackLink(t *testing.T) {

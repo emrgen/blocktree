@@ -10,12 +10,20 @@ func (sc *storeChange) intoSyncBlocks() *SyncBlocks {
 	sb := NewSyncBlocks()
 	sb.children.Extend(sc.blockChange.children.ToSlice())
 
-	for _, child := range sc.blockChange.updated.ToSlice() {
-		sb.updated.Add(child.ID)
-	}
+	//for _, child := range sc.blockChange.updated.ToSlice() {
+	//	sb.updated.Add(child.ID)
+	//}
 
 	for _, child := range sc.blockChange.propSet.ToSlice() {
 		sb.props.Add(child.ID)
+	}
+
+	for _, child := range sc.blockChange.inserted.ToSlice() {
+		sb.inserted.Add(child.ID)
+	}
+
+	for _, child := range sc.blockChange.patched.ToSlice() {
+		sb.patched.Add(child.ID)
 	}
 
 	return sb
@@ -23,6 +31,7 @@ func (sc *storeChange) intoSyncBlocks() *SyncBlocks {
 
 type SyncBlocks struct {
 	children *Set[BlockID]
+	inserted *Set[BlockID]
 	patched  *Set[BlockID]
 	updated  *Set[BlockID]
 	props    *Set[BlockID]
@@ -31,6 +40,7 @@ type SyncBlocks struct {
 func NewSyncBlocks() *SyncBlocks {
 	return &SyncBlocks{
 		children: NewSet[BlockID](),
+		inserted: NewSet[BlockID](),
 		patched:  NewSet[BlockID](),
 		updated:  NewSet[BlockID](),
 		props:    NewSet[BlockID](),
@@ -42,6 +52,18 @@ func (sb *SyncBlocks) extend(other *SyncBlocks) {
 	sb.patched.Extend(other.patched.ToSlice())
 	sb.updated.Extend(other.updated.ToSlice())
 	sb.props.Extend(other.props.ToSlice())
+	sb.inserted.Extend(other.inserted.ToSlice())
+}
+
+func (sb *SyncBlocks) dirty() *Set[BlockID] {
+	dirty := NewSet[BlockID]()
+
+	dirty.Extend(sb.inserted.ToSlice())
+	dirty.Extend(sb.patched.ToSlice())
+	dirty.Extend(sb.updated.ToSlice())
+	dirty.Extend(sb.props.ToSlice())
+
+	return dirty
 }
 
 func (sb *SyncBlocks) IsEmpty() bool {
@@ -60,6 +82,8 @@ type BlockStore interface {
 	GetBlock(spaceID *SpaceID, id BlockID) (*Block, error)
 	// GetChildrenBlocks returns the children of the block with the given id
 	GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	// GetChildrenBlockIDs returns the children block ids of the block with the given id
+	GetChildrenBlockIDs(spaceID *SpaceID, id BlockID) ([]BlockID, error)
 	// GetLinkedBlocks returns the linked blocks of the block with the given id
 	GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	// GetDescendantBlocks returns the descendants of the block with the given id

@@ -17,12 +17,7 @@ func NewApi(store Store) *Api {
 
 // Apply applies the given transactions to the store.
 func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
-	sb := SyncBlocks{
-		children: NewSet[BlockID](),
-		patched:  NewSet[BlockID](),
-		updated:  NewSet[BlockID](),
-		props:    NewSet[BlockID](),
-	}
+	sb := NewSyncBlocks()
 
 	for _, tx := range transactions {
 		change, err := tx.prepare(a.store)
@@ -42,7 +37,7 @@ func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 		sb.extend(change.intoSyncBlocks())
 	}
 
-	return &sb, nil
+	return sb, nil
 }
 
 // CreateSpace creates a new space with the given ID and name.
@@ -93,11 +88,53 @@ func (a *Api) GetDescendantBlocks(spaceID, blockID BlockID) ([]*Block, error) {
 	return a.store.GetDescendantBlocks(&spaceID, blockID)
 }
 
+// GetUpdates returns the updates since the given transaction ID.
+func (a *Api) GetUpdates(spaceID SpaceID, txID TransactionID) (*BlockUpdates, error) {
+	txs := make([]*Transaction, 0)
+	for i := 0; ; i++ {
+		nextTxs, err := a.store.GetNextTransactions(&spaceID, txID, i, 100)
+		if err != nil {
+			return nil, err
+		}
+		if (len(nextTxs)) == 0 {
+			break
+		}
+		txs = append(txs, nextTxs...)
+	}
+
+	updates := NewSyncBlocks()
+	for _, tx := range txs {
+		updates.extend(tx.changes)
+	}
+
+	parenIDs := updates.children.ToSlice()
+	dirtyIDs := updates.dirty().ToSlice()
+
+	childrenMap := make(map[BlockID][]BlockID)
+	for _, parentID := range parenIDs {
+		children, err := a.store.GetChildrenBlockIDs(&spaceID, parentID)
+		if err != nil {
+			return nil, err
+		}
+		childrenMap[parentID] = children
+	}
+
+	blocks, err := a.store.GetBlocks(&spaceID, dirtyIDs)
+	if err != nil {
+		return nil, err
+	}
+	blockMap := make(map[BlockID]*Block)
+	for _, block := range blocks {
+		blockMap[block.ID] = block
+	}
+
+	return &BlockUpdates{
+		Children: childrenMap,
+		Blocks:   blockMap,
+	}, nil
+}
+
 type BlockUpdates struct {
 	Children map[BlockID][]BlockID
 	Blocks   map[BlockID]*Block
-}
-
-func (a *Api) GetUpdates(spaceID SpaceID, txID TransactionID) (*BlockUpdates, error) {
-	panic("not implemented")
 }

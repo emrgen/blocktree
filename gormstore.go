@@ -75,6 +75,11 @@ func (g GormStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, er
 	return ret, nil
 }
 
+func (g GormStore) GetChildrenBlockIDs(spaceID *SpaceID, id BlockID) ([]BlockID, error) {
+	ids := make([]BlockID, 0)
+	return ids, nil
+}
+
 func (g GormStore) GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	//TODO implement me
 	panic("implement me")

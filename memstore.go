@@ -173,6 +173,26 @@ func (ms *MemStore) GetChildrenBlocks(spaceID *SpaceID, id BlockID) ([]*Block, e
 	return blocks, nil
 }
 
+func (ms *MemStore) GetChildrenBlockIDs(spaceID *SpaceID, id BlockID) ([]BlockID, error) {
+	space, ok := ms.spaces[*spaceID]
+	if !ok {
+		return nil, fmt.Errorf("space %v not found", *spaceID)
+	}
+
+	children, ok := space.children[id]
+	if !ok {
+		return nil, fmt.Errorf("block %v not found", id)
+	}
+
+	ids := make([]BlockID, 0)
+	children.Ascend(func(item *Block) bool {
+		ids = append(ids, item.ID)
+		return true
+	})
+
+	return ids, nil
+}
+
 func (ms *MemStore) GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	space, err := ms.getSpace(spaceID)
 	if err != nil {
@@ -562,17 +582,11 @@ func (ms *MemStore) GetNextTransactions(spaceID *SpaceID, id TransactionID, star
 		return nil, fmt.Errorf("space not found: %v", *spaceID)
 	}
 
-	logrus.Infof("getting next transactions from %v", space.txs)
-	for _, tx := range space.txs {
-		logrus.Printf("tx: %v", tx.ID)
-	}
-
 	for i, tx := range space.txs {
 		if tx.ID == id {
 			start, end := i+start+1, i+start+1+limit
 			end = min(len(space.txs), end)
-
-			logrus.Infof("start: %v, end: %v, len: %v", start, end, len(space.txs))
+			//logrus.Infof("start: %v, end: %v, len: %v", start, end, len(space.txs))
 			return space.txs[start:end], nil
 		}
 	}
