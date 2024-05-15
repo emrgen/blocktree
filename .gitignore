@@ -20,7 +20,7 @@ vendor/
 # Go workspace file
 go.work
 
-apis/
+#apis/
 clients/
 bin/
 tmp/
