@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func blockToProtoV1(b *Block) *v1.Block {
+func BlockToProtoV1(b *Block) *v1.Block {
 	logrus.Info(b)
 
 	block := &v1.Block{

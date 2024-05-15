@@ -236,14 +236,24 @@ func (st *stageTable) Apply(tx *Transaction) (*blockChange, error) {
 			}
 			block.ParentID = parent.ID
 			st.change.addUpdated(block)
+			st.change.addLinkOp(linkChangeOp{
+				op:       OpTypeLink,
+				parentID: block.ParentID,
+				childID:  block.ID,
+			})
 		case OpTypeUnlink:
 			block, ok := st.block(op.BlockID)
 			if !ok {
 				return nil, errors.New("unlink block not found")
 			}
 			//TODO: check if this is correct
-			block.ParentID = uuid.Nil
 			st.change.addUpdated(block)
+			st.change.addLinkOp(linkChangeOp{
+				op:       OpTypeUnlink,
+				parentID: block.ParentID,
+				childID:  block.ID,
+			})
+			block.ParentID = uuid.Nil
 		}
 	}
 
@@ -469,6 +479,12 @@ func (st *stageTable) contains(id BlockID) bool {
 	return ok
 }
 
+type linkChangeOp struct {
+	op       OpType
+	parentID BlockID
+	childID  ChildID
+}
+
 // blockChange tracks block changes in a transaction
 type blockChange struct {
 	inserted *Set[*Block]
@@ -476,6 +492,7 @@ type blockChange struct {
 	propSet  *Set[*Block]
 	patched  *Set[*Block]
 	children *Set[BlockID]
+	linkOps  []linkChangeOp
 }
 
 // NewBlockChange creates a new blockChange
@@ -486,6 +503,7 @@ func newBlockChange() *blockChange {
 		updated:  NewSet[*Block](),
 		propSet:  NewSet[*Block](),
 		patched:  NewSet[*Block](),
+		linkOps:  make([]linkChangeOp, 0),
 	}
 }
 
@@ -537,6 +555,10 @@ func (bc *blockChange) addChildren(id BlockID) {
 
 func (bc *blockChange) addPropSet(id *Block) {
 	bc.propSet.Add(id)
+}
+
+func (bc *blockChange) addLinkOp(op linkChangeOp) {
+	bc.linkOps = append(bc.linkOps, op)
 }
 
 //func (bc *blockChange) empty() bool {

@@ -82,6 +82,11 @@ func (a *Api) GetLinkedBlocks(spaceID, blockID BlockID) ([]*Block, error) {
 	return a.store.GetLinkedBlocks(&spaceID, blockID)
 }
 
+// GetBackLinks returns the blocks the block is linked from
+func (a *Api) GetBackLinks(spaceID, blockID BlockID) ([]*Block, error) {
+	return a.store.GetBackLinks(&spaceID, blockID)
+}
+
 // GetDescendantBlocks returns the descendant blocks of the block with the given ID.
 // The descendant blocks are the children blocks, the children of the children blocks, and so on.
 func (a *Api) GetDescendantBlocks(spaceID, blockID BlockID) ([]*Block, error) {

@@ -85,6 +85,11 @@ func (g GormStore) GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, erro
 	panic("implement me")
 }
 
+func (g GormStore) GetBackLinks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (g GormStore) GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
 	//TODO implement me
 	panic("implement me")

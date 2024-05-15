@@ -468,8 +468,11 @@ func TestApi_AddBackLink(t *testing.T) {
 
 	blocks, err = api.GetLinkedBlocks(s1, b2)
 	assert.NoError(t, err)
-
 	assert.Equal(t, 1, len(blocks))
+
+	links, err := api.GetBackLinks(s1, b3)
+	assert.NoError(t, err)
+	assert.Equal(t, len(links), 1)
 
 	blocks, err = api.GetLinkedBlocks(s1, b1)
 	assert.NoError(t, err)
@@ -483,6 +486,10 @@ func TestApi_AddBackLink(t *testing.T) {
 	blocks, err = api.GetLinkedBlocks(s1, b2)
 	assert.NoError(t, err)
 	assert.Equal(t, 0, len(blocks))
+
+	links, err = api.GetBackLinks(s1, b3)
+	assert.NoError(t, err)
+	assert.Equal(t, len(links), 0)
 }
 
 func TestApi_IdempotentTransaction(t *testing.T) {

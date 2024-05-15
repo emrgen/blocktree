@@ -19,20 +19,22 @@ var (
 )
 
 type spaceStore struct {
-	children map[ParentID]*btree.BTreeG[*Block]
-	blocks   map[BlockID]*Block
-	parents  map[BlockID]ParentID
-	props    map[BlockID][]byte
-	txs      []*Transaction
+	children  map[ParentID]*btree.BTreeG[*Block]
+	blocks    map[BlockID]*Block
+	parents   map[BlockID]ParentID
+	props     map[BlockID][]byte
+	backLinks map[BlockID]Set[BlockID]
+	txs       []*Transaction
 }
 
 func newSpaceStore() *spaceStore {
 	timestamp, _ := time.Parse(time.RFC3339, "2000-01-01T00:00:00Z")
 	return &spaceStore{
-		children: make(map[ParentID]*btree.BTreeG[*Block]),
-		blocks:   make(map[BlockID]*Block),
-		parents:  make(map[BlockID]ParentID),
-		props:    make(map[BlockID][]byte),
+		children:  make(map[ParentID]*btree.BTreeG[*Block]),
+		blocks:    make(map[BlockID]*Block),
+		parents:   make(map[BlockID]ParentID),
+		props:     make(map[BlockID][]byte),
+		backLinks: make(map[BlockID]Set[BlockID]),
 		txs: []*Transaction{{
 			ID:      uuid.Nil,
 			SpaceID: SpaceID{},
@@ -213,6 +215,25 @@ func (ms *MemStore) GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, err
 	})
 
 	return blocks, nil
+}
+
+func (ms *MemStore) GetBackLinks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
+	space, err := ms.getSpace(spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	if s, ok := space.backLinks[id]; !ok {
+		return []*Block{}, nil
+	} else {
+
+		blocks, err := ms.GetBlocks(spaceID, s.ToSlice())
+		if err != nil {
+			return nil, err
+		}
+
+		return blocks, nil
+	}
 }
 
 func (ms *MemStore) GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error) {
@@ -457,6 +478,28 @@ func (ms *MemStore) Apply(tx *Transaction, change *storeChange) error {
 			}
 			//logrus.Infof("patching block %v", block.ID)
 			storeBlock.Json = block.Json
+		}
+
+		//update the backlinks
+		for _, change := range blockChange.linkOps {
+			switch change.op {
+			case OpTypeUnlink:
+				backLinks, ok := space.backLinks[change.childID]
+				if !ok {
+					backLinks = *NewSet[BlockID]()
+				}
+
+				backLinks.Remove(change.parentID)
+				space.backLinks[change.childID] = backLinks
+			case OpTypeLink:
+				backLinks, ok := space.backLinks[change.childID]
+				if !ok {
+					backLinks = *NewSet[BlockID]()
+				}
+
+				backLinks.Add(change.parentID)
+				space.backLinks[change.childID] = backLinks
+			}
 		}
 
 		err := ms.PutTransaction(spaceID, &Transaction{

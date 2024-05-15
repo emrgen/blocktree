@@ -27,7 +27,7 @@ deps:
 	go mod vendor
 
 .PHONY: proto
-proto:
+proto: docs
 	@echo "Generating proto files..."
 	buf generate
 

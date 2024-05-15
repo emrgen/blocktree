@@ -146,6 +146,15 @@ message GetUpdatesResponse {
   repeated Block blocks = 2;
 }
 
+message GetBackLinksRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBackLinksResponse {
+  repeated Block blocks = 1;
+}
+
 service Blocktree {
   rpc ApplyTransactions(ApplyTransactionRequest) returns (ApplyTransactionResponse) {
     option (google.api.http) = {
@@ -200,6 +209,15 @@ service Blocktree {
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       operation_id: "GetBlockPage"
+    };
+  }
+
+  rpc GetBackLinks(GetBackLinksRequest) returns (GetBackLinksResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{space_id}/back-links"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBackLinks"
     };
   }
 

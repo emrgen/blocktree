@@ -492,7 +492,6 @@ func TestUpdateBlockProps(t *testing.T) {
 
 	block, err := store.GetBlock(&s1, b1)
 	assert.NoError(t, err)
-
 	assert.Equal(t, `{"name":"John Doe","age":30}`, block.Props.String())
 
 	tx = &Transaction{
@@ -500,6 +499,7 @@ func TestUpdateBlockProps(t *testing.T) {
 		SpaceID: s1,
 		Ops: []Op{
 			updateOp(b1, []byte(`[{"op":"replace","path":"/name","value":"Jane Doe"}]`)),
+			updateOp(b1, []byte(`[{"op":"add","path":"/age","value":20},{"op":"add","path":"/pin","value":700010}]`)),
 		},
 	}
 	applyTransaction(t, store, tx)
@@ -507,7 +507,7 @@ func TestUpdateBlockProps(t *testing.T) {
 	block, err = store.GetBlock(&s1, b1)
 	assert.NoError(t, err)
 
-	assert.Equal(t, `{"name":"Jane Doe","age":30}`, block.Props.String())
+	assert.Equal(t, `{"name":"Jane Doe","age":20,"pin":700010}`, block.Props.String())
 }
 
 func TestInsertOpSyncBlocks(t *testing.T) {

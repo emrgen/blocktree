@@ -89,7 +89,7 @@ func (a *grpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.Ge
 	logrus.Infof("block %v", block)
 
 	return &v1.GetBlockResponse{
-		Block: blockToProtoV1(block),
+		Block: BlockToProtoV1(block),
 	}, nil
 }
 
@@ -124,7 +124,7 @@ func (a *grpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildren
 	v1blocks := make([]*v1.Block, len(blocks))
 	for i, block := range blocks {
 		logrus.Infof("block %v index: %s", block.ID.String(), block.Index.String())
-		v1blocks[i] = blockToProtoV1(block)
+		v1blocks[i] = BlockToProtoV1(block)
 	}
 
 	return &v1.GetBlockChildrenResponse{
@@ -171,11 +171,74 @@ func (a *grpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDesce
 	}, nil
 }
 
-func (a *grpcApi) GetBlockPage(ctx context.Context, request *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
+func (a *grpcApi) GetBlockPage(ctx context.Context, req *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (a *grpcApi) GetUpdates(ctx context.Context, request *v1.GetUpdatesRequest) (*v1.GetUpdatesResponse, error) {
-	panic("implement me")
+func (a *grpcApi) GetBackLinks(ctx context.Context, req *v1.GetBackLinksRequest) (*v1.GetBackLinksResponse, error) {
+	var err error
+	blockID, err := uuid.Parse(req.GetBlockId())
+	if err != nil {
+		return nil, err
+	}
+	spaceID, err := uuid.Parse(req.GetSpaceId())
+	if err != nil {
+		return nil, err
+	}
+
+	links, err := a.api.GetBackLinks(blockID, spaceID)
+	if err != nil {
+		return nil, err
+	}
+
+	blocks := make([]*v1.Block, 0)
+	for _, block := range links {
+		blocks = append(blocks, BlockToProtoV1(block))
+	}
+
+	return &v1.GetBackLinksResponse{
+		Blocks: blocks,
+	}, nil
+}
+
+func (a *grpcApi) GetUpdates(ctx context.Context, req *v1.GetUpdatesRequest) (*v1.GetUpdatesResponse, error) {
+	var err error
+	spaceID, err := uuid.Parse(req.GetSpaceId())
+	if err != nil {
+		return nil, err
+	}
+
+	txID, err := uuid.Parse(req.GetTransactionId())
+	if err != nil {
+		return nil, err
+	}
+	updates, err := a.api.GetUpdates(spaceID, txID)
+	if err != nil {
+		return nil, err
+	}
+
+	res := &v1.GetUpdatesResponse{
+		Updates: make(map[string]*v1.ChildIds),
+		Blocks:  make([]*v1.Block, 0),
+	}
+
+	// convert updates to proto format
+	for _, block := range updates.Blocks {
+		res.Blocks = append(res.Blocks, BlockToProtoV1(block))
+	}
+
+	for parentID, childrenIDs := range updates.Children {
+		childIds := &v1.ChildIds{
+			BlockIds: make([]string, 0),
+		}
+
+		for _, id := range childrenIDs {
+			childIds.BlockIds = append(childIds.BlockIds, id.String())
+		}
+
+		res.Updates[parentID.String()] = childIds
+	}
+
+	return res, nil
 }

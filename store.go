@@ -86,6 +86,8 @@ type BlockStore interface {
 	GetChildrenBlockIDs(spaceID *SpaceID, id BlockID) ([]BlockID, error)
 	// GetLinkedBlocks returns the linked blocks of the block with the given id
 	GetLinkedBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
+	//GetBackLinks return the blocks the current block is linked at
+	GetBackLinks(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	// GetDescendantBlocks returns the descendants of the block with the given id
 	GetDescendantBlocks(spaceID *SpaceID, id BlockID) ([]*Block, error)
 	// GetParentBlock returns the parent of the block with the given id
