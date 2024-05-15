@@ -58,7 +58,7 @@ func newPageGetCmd() *cobra.Command {
 
 			logrus.Infof("Getting page %v", req)
 
-			getPage, err := client.GetBlockDescendants(context.Background(), req)
+			getPage, err := client.GetDescendants(context.Background(), req)
 			if err != nil {
 				logrus.Fatal(err)
 				return
@@ -105,7 +105,7 @@ func newPageSubPagesCmd() *cobra.Command {
 				req.SpaceId = &spaceID
 			}
 
-			getPage, err := client.GetBlockChildren(context.Background(), req)
+			getPage, err := client.GetChildren(context.Background(), req)
 			if err != nil {
 				logrus.Fatal(err)
 				return

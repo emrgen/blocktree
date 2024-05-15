@@ -20,6 +20,8 @@ enum OpType {
   OP_TYPE_UNDELETE = 6;
   OP_TYPE_ERASE = 7;
   OP_TYPE_RESTORE = 8;
+  OP_TYPE_LINK = 9;
+  OP_TYPE_UNLINK = 10;
 }
 
 enum PointerPosition {
@@ -60,7 +62,7 @@ message Transaction {
 //  google.protobuf.Timestamp time = 5;
 }
 
-message ApplyTransactionRequest {
+message TransactionsRequest {
   repeated Transaction transactions = 1;
 }
 
@@ -71,7 +73,7 @@ message ApplyTransactionResult {
   string message = 4;
 }
 
-message ApplyTransactionResponse {
+message TransactionsResponse {
   repeated ApplyTransactionResult transactions = 1;
 }
 
@@ -156,13 +158,13 @@ message GetBackLinksResponse {
 }
 
 service Blocktree {
-  rpc ApplyTransactions(ApplyTransactionRequest) returns (ApplyTransactionResponse) {
+  rpc Apply(TransactionsRequest) returns (TransactionsResponse) {
     option (google.api.http) = {
       post: "/v1/transactions"
       body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      operation_id: "ApplyTransactions"
+      operation_id: "Apply"
     };
   }
 
@@ -185,30 +187,30 @@ service Blocktree {
     };
   }
 
-  rpc GetBlockChildren(GetBlockChildrenRequest) returns (GetBlockChildrenResponse) {
+  rpc GetChildren(GetBlockChildrenRequest) returns (GetBlockChildrenResponse) {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}/children"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      operation_id: "GetBlockChildren"
+      operation_id: "GetChildren"
     };
   }
 
-  rpc GetBlockDescendants(GetBlockDescendantsRequest) returns (GetBlockDescendantsResponse) {
+  rpc GetDescendants(GetBlockDescendantsRequest) returns (GetBlockDescendantsResponse) {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}/descendants"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      operation_id: "GetBlockDescendants"
+      operation_id: "GetDescendants"
     };
   }
 
-  rpc GetBlockPage(GetBlockPageRequest) returns (GetBlockPageResponse) {
+  rpc GetPage(GetBlockPageRequest) returns (GetBlockPageResponse) {
     option (google.api.http) = {
       get: "/v1/blocks/{block_id}/page"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      operation_id: "GetBlockPage"
+      operation_id: "GetPage"
     };
   }
 

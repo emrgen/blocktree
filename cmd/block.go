@@ -19,12 +19,13 @@ func newBlockCmd() *cobra.Command {
 
 	blockCmd.AddCommand(newBlockInsertCmd())
 	blockCmd.AddCommand(newBlockMoveCmd())
-
 	blockCmd.AddCommand(newBlockGetCmd())
 	blockCmd.AddCommand(newBlockUpdateCmd())
 	blockCmd.AddCommand(newBlockDeleteCmd())
 	blockCmd.AddCommand(newBlockUndeleteCmd())
 	blockCmd.AddCommand(newBlockPatchCmd())
+	blockCmd.AddCommand(newBlockLinkCmd())
+	blockCmd.AddCommand(newBlockUnlinkCmd())
 
 	return blockCmd
 }
@@ -94,7 +95,7 @@ func newBlockInsertCmd() *cobra.Command {
 			client := v1.NewBlocktreeClient(conn)
 
 			logrus.Infof("Inserting block: %v", blockID)
-			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
+			res, err := client.Apply(context.Background(), &v1.TransactionsRequest{
 				Transactions: []*v1.Transaction{tx},
 			})
 			if err != nil {
@@ -180,7 +181,7 @@ func newBlockMoveCmd() *cobra.Command {
 			client := v1.NewBlocktreeClient(conn)
 
 			logrus.Infof("Moving block: %v", blockID)
-			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
+			res, err := client.Apply(context.Background(), &v1.TransactionsRequest{
 				Transactions: []*v1.Transaction{tx},
 			})
 			if err != nil {
@@ -301,7 +302,7 @@ func newBlockDeleteCmd() *cobra.Command {
 					Type:    v1.OpType_OP_TYPE_UNDELETE,
 				}},
 			}
-			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
+			res, err := client.Apply(context.Background(), &v1.TransactionsRequest{
 				Transactions: []*v1.Transaction{tx},
 			})
 
@@ -379,7 +380,7 @@ func newBlockPatchCmd() *cobra.Command {
 					Patch:   &patch,
 				}},
 			}
-			res, err := client.ApplyTransactions(context.Background(), &v1.ApplyTransactionRequest{
+			res, err := client.Apply(context.Background(), &v1.TransactionsRequest{
 				Transactions: []*v1.Transaction{&tx},
 			})
 
@@ -397,4 +398,134 @@ func newBlockPatchCmd() *cobra.Command {
 	patchCmd.Flags().StringVarP(&patch, "patch", "p", "", "Patch")
 
 	return patchCmd
+}
+
+func newBlockLinkCmd() *cobra.Command {
+	var spaceID, blockID, parentID string
+	var linkCmd = &cobra.Command{
+		Use:   "link",
+		Short: "Link a block",
+		Run: func(cmd *cobra.Command, args []string) {
+			if spaceID == "" {
+				logrus.Infof("space ID is required")
+				return
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if blockID == "" {
+				logrus.Infof("block ID is required")
+				return
+			}
+			blockID = sanitizeID(blockID)
+
+			if parentID == "" {
+				logrus.Infof("space ID is required")
+				return
+			}
+			parentID = sanitizeID(parentID)
+
+			conn, err := createConnection(":4100")
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
+
+			client := v1.NewBlocktreeClient(conn)
+			logrus.Infof("linking a block: %v", blockID)
+
+			tx := v1.Transaction{
+				TransactionId: uuid.New().String(),
+				SpaceId:       spaceID,
+				UserId:        uuid.Nil.String(),
+				Ops: []*v1.Op{{
+					Table:    "block",
+					BlockId:  blockID,
+					ParentId: &parentID,
+					Type:     v1.OpType_OP_TYPE_LINK,
+				}},
+			}
+
+			res, err := client.Apply(context.Background(), &v1.TransactionsRequest{
+				Transactions: []*v1.Transaction{&tx},
+			})
+
+			if err != nil {
+				logrus.Infof("Failed to link a block: %v", err)
+				return
+			}
+
+			logrus.Infof("Linked a block: %v", res.Transactions)
+		},
+	}
+
+	linkCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	linkCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
+	linkCmd.Flags().StringVarP(&parentID, "parent", "f", "", "Parent ID")
+
+	return linkCmd
+}
+
+func newBlockUnlinkCmd() *cobra.Command {
+	var spaceID, blockID, parentID string
+	var linkCmd = &cobra.Command{
+		Use:   "unlink",
+		Short: "Unlink a block",
+		Run: func(cmd *cobra.Command, args []string) {
+			if spaceID == "" {
+				logrus.Infof("space ID is required")
+				return
+			}
+			spaceID = sanitizeID(spaceID)
+
+			if blockID == "" {
+				logrus.Infof("block ID is required")
+				return
+			}
+			blockID = sanitizeID(blockID)
+
+			if parentID == "" {
+				logrus.Infof("space ID is required")
+				return
+			}
+			parentID = sanitizeID(parentID)
+
+			conn, err := createConnection(":4100")
+			if err != nil {
+				panic(err)
+			}
+			defer conn.Close()
+
+			client := v1.NewBlocktreeClient(conn)
+			logrus.Infof("linking a block: %v", blockID)
+
+			tx := v1.Transaction{
+				TransactionId: uuid.New().String(),
+				SpaceId:       spaceID,
+				UserId:        uuid.Nil.String(),
+				Ops: []*v1.Op{{
+					Table:    "block",
+					BlockId:  blockID,
+					ParentId: &parentID,
+					Type:     v1.OpType_OP_TYPE_UNLINK,
+				}},
+			}
+
+			res, err := client.Apply(context.Background(), &v1.TransactionsRequest{
+				Transactions: []*v1.Transaction{&tx},
+			})
+
+			if err != nil {
+				logrus.Infof("Failed to link a block: %v", err)
+				return
+			}
+
+			logrus.Infof("Linked a block: %v", res.Transactions)
+		},
+	}
+
+	linkCmd.Flags().StringVarP(&spaceID, "space", "s", "", "Space ID")
+	linkCmd.Flags().StringVarP(&blockID, "block", "b", "", "Block ID")
+	linkCmd.Flags().StringVarP(&parentID, "parent", "f", "", "Parent ID")
+
+	return linkCmd
 }

@@ -24,7 +24,7 @@ func newGrpcApi(api *Api) *grpcApi {
 }
 
 // ApplyTransactions applies a list of transactions to the blocktree store
-func (a *grpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactionRequest) (*v1.ApplyTransactionResponse, error) {
+func (a *grpcApi) ApplyTransactions(ctx context.Context, req *v1.TransactionsRequest) (*v1.TransactionsResponse, error) {
 	txs := req.GetTransactions()
 	transactions := make([]*Transaction, 0, len(txs))
 	for _, tx := range txs {
@@ -37,7 +37,7 @@ func (a *grpcApi) ApplyTransactions(ctx context.Context, req *v1.ApplyTransactio
 		transactions = append(transactions, transaction)
 	}
 
-	res := &v1.ApplyTransactionResponse{
+	res := &v1.TransactionsResponse{
 		Transactions: make([]*v1.ApplyTransactionResult, len(transactions)),
 	}
 
@@ -93,7 +93,7 @@ func (a *grpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.Ge
 	}, nil
 }
 
-func (a *grpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
+func (a *grpcApi) GetChildren(ctx context.Context, req *v1.GetBlockChildrenRequest) (*v1.GetBlockChildrenResponse, error) {
 	var err error
 	var spaceID *uuid.UUID
 
@@ -132,7 +132,7 @@ func (a *grpcApi) GetBlockChildren(ctx context.Context, req *v1.GetBlockChildren
 	}, nil
 }
 
-func (a *grpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDescendantsRequest) (*v1.GetBlockDescendantsResponse, error) {
+func (a *grpcApi) GetDescendants(ctx context.Context, req *v1.GetBlockDescendantsRequest) (*v1.GetBlockDescendantsResponse, error) {
 	logrus.Infof("Getting descendant blocks for block: %s", req.GetBlockId())
 	var err error
 	blockID, err := uuid.Parse(req.GetBlockId())
@@ -171,7 +171,7 @@ func (a *grpcApi) GetBlockDescendants(ctx context.Context, req *v1.GetBlockDesce
 	}, nil
 }
 
-func (a *grpcApi) GetBlockPage(ctx context.Context, req *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
+func (a *grpcApi) GetPage(ctx context.Context, req *v1.GetBlockPageRequest) (*v1.GetBlockPageResponse, error) {
 	//TODO implement me
 	panic("implement me")
 }
