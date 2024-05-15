@@ -1,0 +1,234 @@
+syntax = "proto3";
+
+package apis.v1;
+
+import "google/api/annotations.proto";
+import "google/api/httpbody.proto";
+import "google/protobuf/timestamp.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/emrgen/blocktree/proto/v1";
+
+enum OpType {
+  OP_TYPE_UNKNOWN = 0;
+  OP_TYPE_INSERT = 1;
+  OP_TYPE_MOVE = 2;
+  OP_TYPE_UPDATE = 3;
+  OP_TYPE_PATCH = 4;
+  OP_TYPE_DELETE = 5;
+  OP_TYPE_UNDELETE = 6;
+  OP_TYPE_ERASE = 7;
+  OP_TYPE_RESTORE = 8;
+  OP_TYPE_LINK = 9;
+  OP_TYPE_UNLINK = 10;
+}
+
+enum PointerPosition {
+  POINTER_POSITION_UNKNOWN = 0;
+  POINTER_POSITION_BEFORE = 1;
+  POINTER_POSITION_AFTER = 2;
+  POINTER_POSITION_START = 3;
+  POINTER_POSITION_END = 4;
+}
+
+message Pointer {
+  string block_id = 1 [(validate.rules).string = {uuid: true}];
+  PointerPosition position = 2;
+}
+
+message OpProp {
+  repeated string path = 1;
+  string value = 2;
+}
+
+message Op {
+  string table = 1;
+  string block_id = 2;
+  optional string parent_id = 3;
+  OpType type = 4;
+  Pointer at = 5;
+  optional string object = 6;
+  optional bool linked = 7;
+  optional string props = 8;
+  optional string patch = 9;
+}
+
+message Transaction {
+  string transaction_id = 1 [(validate.rules).string = {uuid: true}];
+  string space_id = 2 [(validate.rules).string = {uuid: true}];
+  string user_id = 3 [(validate.rules).string = {uuid: true}];
+  repeated Op ops = 4;
+//  google.protobuf.Timestamp time = 5;
+}
+
+message TransactionsRequest {
+  repeated Transaction transactions = 1;
+}
+
+message ApplyTransactionResult {
+  string transaction_id = 1 [(validate.rules).string = {uuid: true}];
+  string space_id = 2 [(validate.rules).string = {uuid: true}];
+  bool success = 3;
+  string message = 4;
+}
+
+message TransactionsResponse {
+  repeated ApplyTransactionResult transactions = 1;
+}
+
+message CreateSpaceRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string name = 2;
+}
+
+message CreateSpaceResponse {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+}
+
+message Block {
+  string parent_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+  string object = 3;
+  repeated Block children = 4;
+  repeated Block linked = 5;
+  optional string json = 6;
+  optional string props = 7;
+  optional bool deleted = 8;
+  optional bool erased = 9;
+}
+
+
+message GetBlockRequest {
+  optional string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockResponse {
+  Block block = 1;
+}
+
+message GetBlockChildrenRequest {
+  optional string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockChildrenResponse {
+  repeated Block blocks = 1;
+}
+
+message GetBlockDescendantsRequest {
+  optional string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockDescendantsResponse {
+  Block block = 1;
+}
+
+message GetBlockPageRequest {
+  string block_id = 1 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBlockPageResponse {
+  repeated Block blocks = 1;
+}
+
+message GetUpdatesRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string transaction_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message ChildIds {
+  repeated string block_ids = 1;
+}
+
+message GetUpdatesResponse {
+  map<string, ChildIds> updates = 1;
+  repeated Block blocks = 2;
+}
+
+message GetBackLinksRequest {
+  string space_id = 1 [(validate.rules).string = {uuid: true}];
+  string block_id = 2 [(validate.rules).string = {uuid: true}];
+}
+
+message GetBackLinksResponse {
+  repeated Block blocks = 1;
+}
+
+service Blocktree {
+  rpc Apply(TransactionsRequest) returns (TransactionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/transactions"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "Apply"
+    };
+  }
+
+  rpc CreateSpace(CreateSpaceRequest) returns (CreateSpaceResponse) {
+    option (google.api.http) = {
+      post: "/v1/spaces"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "CreateSpace"
+    };
+  }
+
+  rpc GetBlock(GetBlockRequest) returns (GetBlockResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBlock"
+    };
+  }
+
+  rpc GetChildren(GetBlockChildrenRequest) returns (GetBlockChildrenResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}/children"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetChildren"
+    };
+  }
+
+  rpc GetDescendants(GetBlockDescendantsRequest) returns (GetBlockDescendantsResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}/descendants"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetDescendants"
+    };
+  }
+
+  rpc GetPage(GetBlockPageRequest) returns (GetBlockPageResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{block_id}/page"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetPage"
+    };
+  }
+
+  rpc GetBackLinks(GetBackLinksRequest) returns (GetBackLinksResponse) {
+    option (google.api.http) = {
+      get: "/v1/blocks/{space_id}/back-links"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetBackLinks"
+    };
+  }
+
+  rpc GetUpdates(GetUpdatesRequest) returns (GetUpdatesResponse) {
+    option (google.api.http) = {
+      get: "/v1/updates/{space_id}/{transaction_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      operation_id: "GetUpdates"
+    };
+  }
+}
