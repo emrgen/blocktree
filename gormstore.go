@@ -246,7 +246,7 @@ func (b *Block) toGormBlock() *gormBlock {
 		Type:     b.Type,
 		ParentID: b.ParentID,
 		Index:    string(b.Index.Bytes()),
-		Deleted:  false,
-		Erased:   false,
+		Deleted:  b.Deleted,
+		Erased:   b.Erased,
 	}
 }
