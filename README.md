@@ -18,6 +18,9 @@ A reusable library for block storage
 - blocks in a space form a tree (no cycles, no multiple parents, only one block tree per space)
 - space is also a block
 
+## Coverage
+![Coverage](./coverage.svg)
+
 ## Progress
 
 - [x] insert block
