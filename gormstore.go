@@ -3,6 +3,8 @@ package blocktree
 import (
 	"fmt"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -33,7 +35,11 @@ func (g GormStore) Apply(tx *Transaction, change *storeChange) error {
 
 func (g GormStore) CreateSpace(space *Space) error {
 	model := space.toGormSpace()
-	return g.db.Create(model).Error
+	block := space.toGormBlock()
+	_ = g.db.Create(model).Error
+	_ = g.db.Create(block).Error
+
+	return nil
 }
 
 func (g GormStore) GetBlockSpaceID(id *BlockID) (*SpaceID, error) {
@@ -48,9 +54,10 @@ func (g GormStore) CreateBlock(spaceID *SpaceID, block *Block) error {
 
 func (g GormStore) GetBlock(spaceID *SpaceID, id BlockID) (*Block, error) {
 	var model gormBlock
-	res := g.db.First(&model, "id = ?", id)
-	if res.Error != nil {
-		return nil, res.Error
+	logrus.Print(id.String())
+	err := g.db.Find(&model, "id = ?", uuid.UUID(id)).Error
+	if err != nil {
+		return nil, err
 	}
 
 	return model.toBlock()
@@ -164,6 +171,18 @@ func (g GormStore) ApplyChange(space *SpaceID, change *storeChange) error {
 	panic("implement me")
 }
 
+func (g GormStore) Migrate() error {
+	if err := g.db.AutoMigrate(&gormSpace{}); err != nil {
+		return err
+	}
+
+	if err := g.db.AutoMigrate(&gormBlock{}); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // gormSpace is a space in gorm database.
 type gormSpace struct {
 	ID   uuid.UUID `gorm:"type:uuid;primary_key"`
@@ -181,6 +200,15 @@ func (s *Space) toGormSpace() *gormSpace {
 	return &gormSpace{
 		ID:   s.ID,
 		Name: s.Name,
+	}
+}
+
+func (s *Space) toGormBlock() *gormBlock {
+	return &gormBlock{
+		ID:       s.ID,
+		Type:     "space",
+		ParentID: uuid.Nil,
+		Index:    DefaultFracIndex().String(),
 	}
 }
 

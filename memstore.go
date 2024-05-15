@@ -652,6 +652,10 @@ func (ms *MemStore) PutTransaction(spaceID *SpaceID, tx *Transaction) error {
 	return nil
 }
 
+func (ms *MemStore) Migrate() error {
+	return nil
+}
+
 func (ms *MemStore) Print(spaceID *SpaceID) {
 	space, ok := ms.spaces[*spaceID]
 	if !ok {

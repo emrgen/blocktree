@@ -20,7 +20,8 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20231127180814-3a041ad873d4
 	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.33.0
-	gorm.io/gorm v1.25.2-0.20230530020048-26663ab9bf55
+	gorm.io/driver/sqlite v1.5.5
+	gorm.io/gorm v1.25.7-0.20240204074919-46816ad31dde
 )
 
 require (
@@ -32,6 +33,7 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/joho/godotenv v1.3.0 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.12.0 // indirect
