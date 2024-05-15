@@ -86,8 +86,6 @@ func (a *grpcApi) GetBlock(ctx context.Context, req *v1.GetBlockRequest) (*v1.Ge
 		return nil, err
 	}
 
-	logrus.Infof("block %v", block)
-
 	return &v1.GetBlockResponse{
 		Block: BlockToProtoV1(block),
 	}, nil

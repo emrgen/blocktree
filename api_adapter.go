@@ -10,8 +10,6 @@ import (
 )
 
 func BlockToProtoV1(b *Block) *v1.Block {
-	logrus.Info(b)
-
 	block := &v1.Block{
 		Object:   b.Type,
 		BlockId:  b.ID.String(),

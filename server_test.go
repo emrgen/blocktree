@@ -2,6 +2,7 @@ package blocktree
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -59,5 +60,11 @@ func TestApi_Start(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, getBlockRes.Block.BlockId, spaceID)
-
+	type Props struct {
+		Name string
+	}
+	var props Props
+	err = json.Unmarshal([]byte(*getBlockRes.Block.Props), &props)
+	assert.NoError(t, err)
+	assert.Equal(t, props.Name, "space-name")
 }
