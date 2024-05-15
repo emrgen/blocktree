@@ -98,7 +98,6 @@ message Block {
   optional bool erased = 9;
 }
 
-
 message GetBlockRequest {
   optional string space_id = 1 [(validate.rules).string = {uuid: true}];
   string block_id = 2 [(validate.rules).string = {uuid: true}];
