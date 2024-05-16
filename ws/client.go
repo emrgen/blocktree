@@ -2,7 +2,7 @@ package ws
 
 // Client is the interface that wraps the basic methods to interact with a websocket server.
 type Client interface {
-	Publish(topic string, msg string) error
+	Publish(topic string, msg []byte) error
 	Subscribe(topic string, cb MessageHandler) (PubSub, error)
 	Connect() error
 	Disconnect() error

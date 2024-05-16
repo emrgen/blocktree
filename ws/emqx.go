@@ -50,7 +50,7 @@ func (e EmqxClient) Disconnect() error {
 	return nil
 }
 
-func (e EmqxClient) Publish(topic string, msg string) error {
+func (e EmqxClient) Publish(topic string, msg []byte) error {
 	token := e.client.Publish(topic, 0, false, msg)
 	token.Wait()
 

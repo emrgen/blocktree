@@ -11,7 +11,7 @@ type NsqClient struct {
 
 var _ Client = (*NsqClient)(nil)
 
-func (n NsqClient) Publish(topic string, msg string) error {
+func (n NsqClient) Publish(topic string, msg []byte) error {
 	return n.producer.Publish(topic, []byte(msg))
 }
 

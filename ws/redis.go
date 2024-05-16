@@ -1,11 +1,8 @@
 package ws
 
 import (
-	"errors"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/go-redis/redis"
+	"github.com/sirupsen/logrus"
 )
 
 var _ Client = (*RedisClient)(nil)
@@ -23,7 +20,7 @@ func NewRedisClient() Client {
 	}
 }
 
-func (r RedisClient) Publish(topic string, msg string) error {
+func (r RedisClient) Publish(topic string, msg []byte) error {
 	_, err := r.redis.Publish(topic, msg).Result()
 	if err != nil {
 		return err
@@ -34,26 +31,18 @@ func (r RedisClient) Publish(topic string, msg string) error {
 
 func (r RedisClient) Subscribe(topic string, cb MessageHandler) (PubSub, error) {
 	sub := r.redis.Subscribe(topic)
-	payload, err := sub.Receive()
-	if err != nil {
-		return nil, err
-	}
 
-	var msg []byte
-	switch payload.(type) {
-	case []byte:
-		msg = payload.([]byte)
-	case string:
-		msg = []byte(payload.(string))
-	default:
-		logrus.Printf("invalid payload type: %T", payload)
-		return nil, errors.New("invalid payload type")
-	}
+	channel := sub.Channel()
 
-	cb(r, Message{
-		Topic:   topic,
-		Payload: msg,
-	})
+	go func() {
+		for msg := range channel {
+			logrus.Print("Received message: ", msg.Payload)
+			cb(r, Message{
+				Topic:   msg.Channel,
+				Payload: []byte(msg.Payload),
+			})
+		}
+	}()
 
 	return RedisPubSub{
 		topic:  topic,
