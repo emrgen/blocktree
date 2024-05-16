@@ -129,5 +129,6 @@ type Store interface {
 	// Apply applies blocktree change to db in one transaction
 	Apply(tx *Transaction, change *storeChange) error
 
+	// Migrate prepares the store
 	Migrate() error
 }
