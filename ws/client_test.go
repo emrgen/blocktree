@@ -16,6 +16,7 @@ func TestMain(m *testing.M) {
 func TestEmqxClient_Subscribe(t *testing.T) {
 	testClientSubscription(t, NewEmqxClient())
 	testClientSubscription(t, NewRedisClient())
+	//testClientSubscription(t, NewKafkaClient("test", 1))
 }
 
 func testClientSubscription(t *testing.T, client Client) {
@@ -39,6 +40,7 @@ func testClientSubscription(t *testing.T, client Client) {
 		assert.Equal(t, "Hello, World!", string(msg))
 		break
 	case <-time.After(5 * time.Second):
+		_ = client.Disconnect()
 		t.Error("Timeout")
 	}
 }
