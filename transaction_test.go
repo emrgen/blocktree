@@ -201,6 +201,21 @@ func TestInsertOpBetween(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, b1, block.ID)
 
+	tx = &Transaction{
+		ID:      uuid.New(),
+		SpaceID: s1,
+		Ops: []Op{
+			insertOp(b6, "p4", b2, PositionBefore),
+		},
+	}
+
+	applyTransaction(t, store, tx)
+
+	blocks, err := store.GetChildrenBlockIDs(&s1, b1)
+	assert.NoError(t, err)
+	assert.Equal(t, 5, len(blocks), "b1 should have 5 children blocks")
+	assert.Equal(t, b6, blocks[0])
+
 	//store.Print(&s1)
 }
 

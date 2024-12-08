@@ -149,8 +149,8 @@ type Block struct {
 	Index       *FracIndex
 	Props       *JsonDoc
 	Json        *JsonDoc
-	Deleted     bool
-	Erased      bool
+	Deleted     bool // soft delete
+	Erased      bool // permanent delete
 	Linked      bool // linked blocks
 	UpdateFlags uint32
 }
