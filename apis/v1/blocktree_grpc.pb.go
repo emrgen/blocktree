@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             (unknown)
-// source: apis/v1/apis.proto
+// source: apis/v1/blocktree.proto
 
 package v1
 
@@ -364,5 +364,5 @@ var Blocktree_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "apis/v1/apis.proto",
+	Metadata: "apis/v1/blocktree.proto",
 }

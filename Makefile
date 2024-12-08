@@ -26,10 +26,11 @@ deps:
 	go mod tidy
 	go mod vendor
 
-.PHONY: proto
-proto: docs
+.PHONY: protoc
+protoc:
 	@echo "Generating proto files..."
 	buf generate
+
 
 clean:
 	@echo "Cleaning..."
@@ -39,7 +40,7 @@ clean:
 
 generate-ts-client:
 	@echo "Generating typescript client..."
-	@openapi-generator-cli generate -i ./apis/v1/apis.swagger.json \
+	@openapi-generator-cli generate -i ./apis/v1/blocktree.swagger.json \
 		-g typescript-axios -o ./client/blocktree-ts-client \
 		--additional-properties=npmName=@emrgen/blocktree-client,npmVersion=$(CLIENT_VERSION),useSingleRequestParameter=true \
         --type-mappings=string=String
@@ -56,7 +57,7 @@ doc:
 docs:
 	@echo "Generating API documentation..."
 	@mkdir -p ./docs
-	@npx @redocly/cli build-docs ./apis/v1/apis.swagger.json --output ./docs/v1/index.html
+	@npx @redocly/cli build-docs ./apis/v1/blocktree.swagger.json --output ./docs/v1/index.html
 
 .PHONY: lint
 lint:
