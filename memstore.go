@@ -53,7 +53,7 @@ func (ss *spaceStore) equals(other *spaceStore) bool {
 	for id, block := range ss.blocks {
 		otherBlock, ok := other.blocks[id]
 		if !ok {
-			logrus.Debugf("comparing block %v, %v", block.ID, otherBlock.ID)
+			logrus.Debugf("blocks are different %v, %v", block, otherBlock)
 			return false
 		}
 

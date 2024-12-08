@@ -433,7 +433,7 @@ func TestApi_TransactionChanges(t *testing.T) {
 
 	assert.Equal(t, 3, len(updates.Blocks))
 
-	fmt.Printf("updates: %v\n", updates)
+	//fmt.Printf("updates: %v\n", updates)
 }
 
 func TestApi_AddBackLink(t *testing.T) {

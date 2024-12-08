@@ -51,7 +51,7 @@ func TestSyncAgentWithServer(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, block.ID, b1)
 
-	a1.api.store.(*MemStore).Print(&s1)
+	//a1.api.store.(*MemStore).Print(&s1)
 
 	err = a1.sync(server)
 	assert.NoError(t, err)
@@ -76,7 +76,7 @@ func TestSyncAgentWithServerWithConflict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, block.ID, b1)
 
-	a1.api.store.(*MemStore).Print(&s1)
+	//a1.api.store.(*MemStore).Print(&s1)
 
 	// create a new agent
 	aid2 := uuid.New()
@@ -91,7 +91,7 @@ func TestSyncAgentWithServerWithConflict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, block.ID, b1)
 
-	a2.api.store.(*MemStore).Print(&s1)
+	//a2.api.store.(*MemStore).Print(&s1)
 
 	err = a1.sync(server)
 	assert.NoError(t, err)
