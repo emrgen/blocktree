@@ -6,12 +6,21 @@ import (
 )
 
 type Api struct {
-	store Store
+	store     Store
+	publisher PublishSyncBlocks
 }
 
 func NewApi(store Store) *Api {
 	return &Api{
-		store: store,
+		store:     store,
+		publisher: NewNullPublisher(),
+	}
+}
+
+func NewApiWithPublisher(store Store, publisher PublishSyncBlocks) *Api {
+	return &Api{
+		store:     store,
+		publisher: publisher,
 	}
 }
 
@@ -26,6 +35,11 @@ func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 				continue
 			}
 
+			err := a.publisher.Publish(sb)
+			if err != nil {
+				return nil, errors.Join(err, ErrFailedToPublish)
+			}
+
 			return nil, err
 		}
 
@@ -35,6 +49,11 @@ func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 		}
 
 		sb.extend(change.intoSyncBlocks())
+	}
+
+	err := a.publisher.Publish(sb)
+	if err != nil {
+		return nil, ErrFailedToPublish
 	}
 
 	return sb, nil

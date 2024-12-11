@@ -6,6 +6,7 @@ type storeChange struct {
 	tx            *Transaction
 }
 
+// intoSyncBlocks converts the store change into a SyncBlocks object
 func (sc *storeChange) intoSyncBlocks() *SyncBlocks {
 	sb := NewSyncBlocks()
 	sb.children.Extend(sc.blockChange.children.ToSlice())
@@ -29,6 +30,7 @@ func (sc *storeChange) intoSyncBlocks() *SyncBlocks {
 	return sb
 }
 
+// SyncBlocks is a set of blocks that have been updated and need to be synced with the clients
 type SyncBlocks struct {
 	children *Set[BlockID]
 	inserted *Set[BlockID]

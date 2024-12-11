@@ -55,23 +55,26 @@ func (s *Server) Start() error {
 		}),
 	)
 
-	api := NewApi(s.store)
-	// Register the server with the gRPC server
-	v1.RegisterBlocktreeServer(grpcServer, newGrpcApi(api))
-
 	opts := []grpc.DialOption{grpc.WithTransportCredentials(insecure.NewCredentials())}
 	endpoint := "localhost" + grpcPort
 
+	api := NewApiWithPublisher(s.store, NewNullPublisher())
+
+	// Register the server with the gRPC server
+	v1.RegisterBlocktreeServer(grpcServer, newGrpcApi(api))
+	// Register the server with the rest gateway
 	if err := v1.RegisterBlocktreeHandlerFromEndpoint(context.TODO(), mux, endpoint, opts); err != nil {
 		return err
 	}
 
+	// Serve the OpenAPI documentation
 	apiMux := http.NewServeMux()
 	openAPIBox := packr.NewBox("docs/v1")
 	docsPath := "/v1/docs/"
 	apiMux.Handle(docsPath, http.StripPrefix(docsPath, http.FileServer(openAPIBox)))
 	apiMux.Handle("/", mux)
 
+	// Add CORS support
 	c := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
@@ -79,6 +82,7 @@ func (s *Server) Start() error {
 		AllowCredentials: true,
 	})
 
+	// Create the HTTP server
 	httpServer := &http.Server{
 		Addr:    httpPort,
 		Handler: c.Handler(apiMux),

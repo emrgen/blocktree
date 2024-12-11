@@ -11,8 +11,9 @@ import (
 )
 
 var (
-	ErrCreatesCycle  = fmt.Errorf("operation creates cycle")
-	ErrDetectedCycle = fmt.Errorf("existing cycle detected")
+	ErrCreatesCycle    = fmt.Errorf("operation creates cycle")
+	ErrDetectedCycle   = fmt.Errorf("existing cycle detected")
+	ErrFailedToPublish = fmt.Errorf("failed to publish sync blocks")
 )
 
 type TransactionID = uuid.UUID
@@ -27,6 +28,8 @@ type Transaction struct {
 	changes *SyncBlocks
 }
 
+// prepare prepares the transaction for application to the store.
+// changes are applied to the store in one transaction.
 func (tx *Transaction) prepare(store Store) (*storeChange, error) {
 	//check if transaction is not already applied
 	_, err := store.GetTransaction(&tx.SpaceID, tx.ID)
