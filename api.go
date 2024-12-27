@@ -28,6 +28,9 @@ func NewApiWithPublisher(store Store, publisher PublishSyncBlocks) *Api {
 func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 	sb := NewSyncBlocks()
 
+	// TODO: each transaction should be a db transaction
+	// translation failure should break the loop
+	// the client should retry the un-applied transactions
 	for _, tx := range transactions {
 		change, err := tx.prepare(a.store)
 		if err != nil {

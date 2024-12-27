@@ -39,6 +39,7 @@ type SyncBlocks struct {
 	props    *Set[BlockID]
 }
 
+// NewSyncBlocks creates a new SyncBlocks object
 func NewSyncBlocks() *SyncBlocks {
 	return &SyncBlocks{
 		children: NewSet[BlockID](),

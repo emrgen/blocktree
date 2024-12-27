@@ -18,6 +18,7 @@ type ParentID = uuid.UUID
 type ChildID = uuid.UUID
 type SpaceID = uuid.UUID
 
+// Space is a collection of blocks
 type Space struct {
 	ID   SpaceID
 	Name string
@@ -30,8 +31,10 @@ func newSpace(spaceID SpaceID, name string) *Space {
 	}
 }
 
+// BlockProps is a map of block properties
 type BlockProps = map[string]interface{}
 
+// BlockView is a view of the blocktree
 type BlockView struct {
 	Type     string
 	ID       uuid.UUID
@@ -44,6 +47,7 @@ type BlockView struct {
 	Erased   bool
 }
 
+// BlockViewFromBlock creates a blockView from a block
 func BlockViewFromBlock(block *Block) *BlockView {
 	return &BlockView{
 		Type:     block.Type,
@@ -155,6 +159,7 @@ type Block struct {
 	UpdateFlags uint32
 }
 
+// NewBlock creates a new block
 func NewBlock(blockID BlockID, parentID ParentID, blockType string) *Block {
 	return &Block{
 		Type:     blockType,
@@ -171,6 +176,7 @@ func (b *Block) mergeProps(props []byte) error {
 	return b.Props.Apply(props)
 }
 
+// Clone creates a copy of the block
 func (b *Block) Clone() *Block {
 	return &Block{
 		Type:     b.Type,

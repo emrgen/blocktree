@@ -22,11 +22,13 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+// Server is the blocktree server
 type Server struct {
 	Config *Config
 	store  Store
 }
 
+// NewServer creates a new server
 func NewServer(store Store, config *Config) *Server {
 	return &Server{
 		store:  store,
@@ -34,10 +36,12 @@ func NewServer(store Store, config *Config) *Server {
 	}
 }
 
+// Start starts the server
 func (s *Server) Start() error {
 	grpcPort := fmt.Sprintf(":%d", s.Config.GrpcPort)
 	httpPort := fmt.Sprintf(":%d", s.Config.HttpPort)
 
+	// Create the gRPC server
 	grpcServer := grpc.NewServer()
 
 	// Connect the rest gateway to the grpc server
