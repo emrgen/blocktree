@@ -467,6 +467,7 @@ func (tx *Transaction) loadRelevantBlocks(store Store, op *Op) ([]*Block, error)
 	return relevantBlocks, nil
 }
 
+// OpType is the type of operation
 type OpType string
 
 const (
@@ -498,6 +499,7 @@ type Pointer struct {
 	Position PointerPosition `json:"position"`
 }
 
+// OpProp is a property operation
 type OpProp struct {
 	Path  []string
 	Value interface{}
@@ -516,6 +518,7 @@ type Op struct {
 	Patch    []byte   `json:"patch"`
 }
 
+// IntoBlock converts the operation into a block object
 func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 	if op.Type != OpTypeInsert {
 		return nil, fmt.Errorf("op is not a insert op")
@@ -551,6 +554,7 @@ func (op *Op) IntoBlock(parentID ParentID) (*Block, error) {
 	}, nil
 }
 
+// IntoProp converts the operation into a property operation
 func (op *Op) String() string {
 	switch op.Type {
 	case OpTypeInsert:
