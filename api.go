@@ -35,8 +35,8 @@ func (a *Api) Apply(transactions ...*Transaction) (*SyncBlocks, error) {
 				continue
 			}
 
-			err := a.publisher.Publish(sb)
-			if err != nil {
+			err2 := a.publisher.Publish(sb)
+			if err2 != nil {
 				return nil, errors.Join(err, ErrFailedToPublish)
 			}
 
