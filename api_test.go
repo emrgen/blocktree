@@ -377,6 +377,13 @@ func TestApi_GetBlockSpaceID(t *testing.T) {
 	spaceID, err := api.GetBlockSpaceID(b1)
 	assert.NoError(t, err)
 	assert.Equal(t, s1, *spaceID)
+	block, err := api.GetBlock(s1, b1)
+	assert.NoError(t, err)
+
+	assert.Equal(t, b1, block.ID)
+	blocks, err := api.GetChildrenBlocks(s1, s1)
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(blocks))
 }
 
 func TestApi_TransactionChanges(t *testing.T) {

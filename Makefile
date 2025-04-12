@@ -15,6 +15,11 @@ build:
 	@echo "Building blocktree server"
 	@go build -o ./bin/bt ./cmd/cli/main.go
 
+.PHONY: run
+air:
+	@echo "Starting blocktree server with air"
+	@air
+
 .PHONY: test
 test:
 	@echo "Running tests..."

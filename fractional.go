@@ -43,17 +43,17 @@ func NewBetween(left, right *FracIndex) (*FracIndex, error) {
 
 	for i := 0; i < shorterLen; i++ {
 		if left.bytes[i] < right.bytes[i]-1 {
-			bytes := make([]byte, i+1)
-			copy(bytes, left.bytes)
-			bytes[i] = (left.bytes[i] + right.bytes[i]) / 2
-			return fromUnterminated(bytes), nil
+			buf := make([]byte, i+1)
+			copy(buf, left.bytes)
+			buf[i] = (left.bytes[i] + right.bytes[i]) / 2
+			return fromUnterminated(buf), nil
 		}
 
 		if left.bytes[i] == right.bytes[i]-1 {
-			bytes := make([]byte, len(left.bytes))
-			copy(bytes, left.bytes[:i+1])
-			copy(bytes[i+1:], newAfter(left.bytes[i+1:]))
-			return fromUnterminated(bytes), nil
+			buf := make([]byte, len(left.bytes))
+			copy(buf, left.bytes[:i+1])
+			copy(buf[i+1:], newAfter(left.bytes[i+1:]))
+			return fromUnterminated(buf), nil
 		}
 
 		if left.bytes[i] > right.bytes[i] {
@@ -64,28 +64,28 @@ func NewBetween(left, right *FracIndex) (*FracIndex, error) {
 	// if we get here, the bytes are equal up to the length of the shorterLen
 	if len(left.bytes) < len(right.bytes) {
 		// if left and right are equal up to the length of the shorterLen
-		// find the before FracIndex bytes from the right's suffix
+		// find the before FracIndex buf from the right's suffix
 		if uint8(right.bytes[shorterLen]) < terminator {
 			return nil, fmt.Errorf("left index %v is not less than right index %v", left, right)
 		}
 
 		newSuffix := newBefore(right.bytes[shorterLen+1:])
-		bytes := make([]byte, shorterLen+1+len(newSuffix))
-		copy(bytes, right.bytes[:shorterLen+1])
-		copy(bytes[shorterLen+1:], newSuffix)
-		return fromUnterminated(bytes), nil
+		buf := make([]byte, shorterLen+1+len(newSuffix))
+		copy(buf, right.bytes[:shorterLen+1])
+		copy(buf[shorterLen+1:], newSuffix)
+		return fromUnterminated(buf), nil
 	} else if len(left.bytes) > len(right.bytes) {
 		// if left and right are equal up to the length of the shorterLen
-		// find the after FracIndex bytes from the left's suffix
+		// find the after FracIndex buf from the left's suffix
 		if uint8(left.bytes[shorterLen]) >= terminator {
 			return nil, fmt.Errorf("left index %v is not less than right index %v", left, right)
 		}
 
 		newSuffix := newAfter(left.bytes[shorterLen+1:])
-		bytes := make([]byte, shorterLen+1+len(newSuffix))
-		copy(bytes, left.bytes[:shorterLen+1])
-		copy(bytes[shorterLen+1:], newSuffix)
-		return fromUnterminated(bytes), nil
+		buf := make([]byte, shorterLen+1+len(newSuffix))
+		copy(buf, left.bytes[:shorterLen+1])
+		copy(buf[shorterLen+1:], newSuffix)
+		return fromUnterminated(buf), nil
 	} else {
 		return nil, fmt.Errorf("left index %v is equal to the right index %v", left, right)
 	}
@@ -138,16 +138,16 @@ func (f *FracIndex) String() string {
 func newBefore(indexBytes []byte) []byte {
 	for i := 0; i < len(indexBytes); i++ {
 		if indexBytes[i] > terminator {
-			bytes := make([]byte, i)
-			copy(bytes, indexBytes)
-			return bytes
+			buf := make([]byte, i)
+			copy(buf, indexBytes)
+			return buf
 		}
 
 		if indexBytes[i] > uint8(0) {
-			bytes := make([]byte, i+1)
-			copy(bytes, indexBytes)
-			bytes[i] -= 1
-			return bytes
+			buf := make([]byte, i+1)
+			copy(buf, indexBytes)
+			buf[i] -= 1
+			return buf
 		}
 	}
 

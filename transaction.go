@@ -473,8 +473,8 @@ type OpType string
 const (
 	OpTypeInsert   OpType = "insert"
 	OpTypeMove     OpType = "move"
-	OpTypeUpdate   OpType = "update" // update properties
-	OpTypePatch    OpType = "patch"  // patch json
+	OpTypeUpdate   OpType = "update" // update properties of a block
+	OpTypePatch    OpType = "patch"  // patch json document of a block
 	OpTypeLink     OpType = "link"
 	OpTypeUnlink   OpType = "unlink"
 	OpTypeDelete   OpType = "delete"
@@ -486,14 +486,17 @@ const (
 type PointerPosition string
 
 const (
+	// PositionBefore before and after are used for inserting blocks before or after a reference block
 	PositionBefore PointerPosition = "before"
 	PositionAfter  PointerPosition = "after"
-	PositionStart  PointerPosition = "start"
-	PositionEnd    PointerPosition = "end"
+	// PositionStart start and end are used for inserting blocks at the start or end of a reference block children
+	PositionStart PointerPosition = "start"
+	PositionEnd   PointerPosition = "end"
+	// PositionInside inside is used for inserting blocks inside a reference block
 	PositionInside PointerPosition = "inside"
 )
 
-// Pointer is a reference to a block position
+// Pointer is a position wrt a block
 type Pointer struct {
 	BlockID  uuid.UUID       `json:"block_id"`
 	Position PointerPosition `json:"position"`
